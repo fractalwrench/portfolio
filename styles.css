@@ -117,7 +117,7 @@ html, body {
 .mdl-demo section.section--center {
   max-width: 860px;
 }
-.mdl-demo #code section.section--center {
+.mdl-demo #experience section.section--center {
   max-width: 620px;
 }
 .mdl-demo section > header{
@@ -213,13 +213,10 @@ html, body {
 .mdl-demo .mdl-card .mdl-card__supporting-text > h3:first-child {
   margin-bottom: 24px;
 }
-.mdl-demo .mdl-layout__tab-panel:not(#projects) {
-  background-color: white;
-}
-.mdl-demo #code section {
+.mdl-demo #experience section {
   margin-bottom: 72px;
 }
-.mdl-demo #code h4, #code h5 {
+.mdl-demo #experience h4, #experience h5 {
   margin-bottom: 16px;
 }
 .mdl-demo .toc {
