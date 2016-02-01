@@ -120,6 +120,10 @@ html, body {
 .mdl-demo #experience section.section--center {
   max-width: 620px;
 }
+
+.mdl-demo #contact section.section--center {
+  max-width: 620px;
+}
 .mdl-demo section > header{
   display: -webkit-box;
   display: -webkit-flex;
@@ -213,7 +217,7 @@ html, body {
 .mdl-demo .mdl-card .mdl-card__supporting-text > h3:first-child {
   margin-bottom: 24px;
 }
-.mdl-demo #experience section {
+.mdl-demo section {
   margin-bottom: 72px;
 }
 .mdl-demo #experience h4, #experience h5 {
