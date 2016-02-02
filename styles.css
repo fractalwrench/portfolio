@@ -20,19 +20,27 @@ html, body {
   padding: 0;
 }
 .card-image {
-   max-height: 100%;
-   max-width: 100%;
+  max-height: 100%;
+  max-width: 100%;
+}
+.page-container {
+  padding-left: 0px;
+  padding-right: 0px;
+  padding-top: 0px;
 }
 .experience-banner {
   background-color: #000000;
-  width:100%;
-  height:300px;
-  style="background-color:#000;width:100%;height:300px;"
+  width: 100%;
+  height: 300px;
 }
 .card-image-container {
   border-right: 1px solid rgba(0, 0, 0, 0.12);
 }
+.mdl-card__actions {
+  text-align: center;
+}
 
+/* End custom CSS*/
 
 .mdl-demo .mdl-layout__header-row {
   padding-left: 40px;
@@ -46,8 +54,7 @@ html, body {
 .mdl-demo .mdl-layout.is-small-screen .mdl-layout__tab-bar .mdl-button {
   display: none;
 }
-.mdl-demo .mdl-layout:not(.is-small-screen) .mdl-layout__tab-bar,
-.mdl-demo .mdl-layout:not(.is-small-screen) .mdl-layout__tab-bar-container {
+.mdl-demo .mdl-layout:not(.is-small-screen) .mdl-layout__tab-bar, .mdl-demo .mdl-layout:not(.is-small-screen) .mdl-layout__tab-bar-container {
   overflow: visible;
 }
 .mdl-demo .mdl-layout__tab-bar-container {
@@ -81,8 +88,8 @@ html, body {
   -webkit-box-orient: vertical;
   -webkit-box-direction: normal;
   -webkit-flex-direction: column;
-      -ms-flex-direction: column;
-          flex-direction: column;
+  -ms-flex-direction: column;
+  flex-direction: column;
 }
 .mdl-demo .mdl-card > * {
   height: auto;
@@ -91,8 +98,8 @@ html, body {
   margin: 40px;
   -webkit-box-flex: 1;
   -webkit-flex-grow: 1;
-      -ms-flex-positive: 1;
-          flex-grow: 1;
+  -ms-flex-positive: 1;
+  flex-grow: 1;
   padding: 0;
   color: inherit;
   width: calc(100% - 80px);
@@ -110,8 +117,7 @@ html, body {
   color: #00BCD4;
   margin: 0;
 }
-.mdl-demo .mdl-card__actions a:hover,
-.mdl-demo .mdl-card__actions a:active {
+.mdl-demo .mdl-card__actions a:hover, .mdl-demo .mdl-card__actions a:active {
   color: inherit;
   background-color: transparent;
 }
@@ -124,7 +130,6 @@ html, body {
   top: 36px;
   z-index: 999;
 }
-
 .mdl-demo .mdl-layout__content section:not(:last-of-type) {
   position: relative;
   margin-bottom: 48px;
@@ -135,23 +140,22 @@ html, body {
 .mdl-demo #experience section.section--center {
   max-width: 620px;
 }
-
 .mdl-demo #contact section.section--center {
   max-width: 620px;
 }
-.mdl-demo section > header{
+.mdl-demo section > header {
   display: -webkit-box;
   display: -webkit-flex;
   display: -ms-flexbox;
   display: flex;
   -webkit-box-align: center;
   -webkit-align-items: center;
-      -ms-flex-align: center;
-          align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
   -webkit-box-pack: center;
   -webkit-justify-content: center;
-      -ms-flex-pack: center;
-          justify-content: center;
+  -ms-flex-pack: center;
+  justify-content: center;
 }
 .mdl-demo section > .section__play-btn {
   min-height: 200px;
@@ -172,28 +176,28 @@ html, body {
   display: flex;
   -webkit-box-align: center;
   -webkit-align-items: center;
-      -ms-flex-align: center;
-          align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
   -webkit-box-pack: start;
   -webkit-justify-content: flex-start;
-      -ms-flex-pack: start;
-          justify-content: flex-start;
+  -ms-flex-pack: start;
+  justify-content: flex-start;
   -webkit-box-flex: 0;
   -webkit-flex-grow: 0;
-      -ms-flex-positive: 0;
-          flex-grow: 0;
+  -ms-flex-positive: 0;
+  flex-grow: 0;
   -webkit-flex-shrink: 1;
-      -ms-flex-negative: 1;
-          flex-shrink: 1;
+  -ms-flex-negative: 1;
+  flex-shrink: 1;
 }
 .mdl-demo section .section__text {
   -webkit-box-flex: 1;
   -webkit-flex-grow: 1;
-      -ms-flex-positive: 1;
-          flex-grow: 1;
+  -ms-flex-positive: 1;
+  flex-grow: 1;
   -webkit-flex-shrink: 0;
-      -ms-flex-negative: 0;
-          flex-shrink: 0;
+  -ms-flex-negative: 0;
+  flex-shrink: 0;
   padding-top: 8px;
 }
 .mdl-demo section .section__text h5 {
@@ -227,7 +231,7 @@ html, body {
   margin: 0 -8px -8px -8px;
 }
 .mdl-demo section.section--center .section__text:not(:last-child) {
-  border-bottom: 1px solid rgba(0,0,0,.13);
+  border-bottom: 1px solid rgba(0, 0, 0, .13);
 }
 .mdl-demo .mdl-card .mdl-card__supporting-text > h3:first-child {
   margin-bottom: 24px;
@@ -250,8 +254,8 @@ html, body {
   -webkit-box-orient: vertical;
   -webkit-box-direction: normal;
   -webkit-flex-direction: column;
-      -ms-flex-direction: column;
-          flex-direction: column;
+  -ms-flex-direction: column;
+  flex-direction: column;
 }
 .mdl-demo .toc h4 {
   font-size: 0.9rem;
