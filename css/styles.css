@@ -22,6 +22,8 @@ html, body {
 .card-image {
   max-height: 100%;
   max-width: 100%;
+  min-width: 100%;
+  min-height: 100%;
 }
 .page-container {
   padding-left: 0px;
@@ -42,6 +44,10 @@ html, body {
 .site-header a {
   text-decoration: none;
   color: white;
+}
+.header-image {
+  max-height:450px;
+  min-height:450px
 }
 
 /* End custom CSS*/
