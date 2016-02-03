@@ -10,8 +10,8 @@
 
   <link href="https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link rel="stylesheet" href="material.min.css">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="./css/material.min.css">
+  <link rel="stylesheet" href="./css/styles.css">
 
   <link rel="stylesheet" href="https://code.getmdl.io/1.1.0/material.blue-red.min.css" />
   <script src="https://storage.googleapis.com/code.getmdl.io/1.0.6/material.min.js"></script>
@@ -23,10 +23,11 @@
   <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
 
     <!-- Nav Header -->
-    <header class="mdl-layout__header mdl-layout__header--scroll mdl-color--primary">
+    <header class="site-header mdl-layout__header mdl-layout__header--scroll mdl-color--primary">
       <div class="mdl-layout--large-screen-only mdl-layout__header-row">
       </div>
       <div class="mdl-layout--large-screen-only mdl-layout__header-row">
+        <a href="#" /> <!-- FIXME update link -->
         <h1>FractalWrench</h1>
       </div>
       <div class="mdl-layout--large-screen-only mdl-layout__header-row">
@@ -50,10 +51,6 @@
 
 
 
-
-
-
-
     <!-- Main Content -->
     <main class="mdl-layout__content">
       <div style="padding-left:0px;padding-right:0px;padding-top:0px;" class="mdl-layout__tab-panel is-active" id="projects">
@@ -73,14 +70,14 @@
             </div>
           </div>
           <header class="card-image-container section__play-btn mdl-cell mdl-cell--4-col-desktop mdl-cell--3-col-tablet mdl-cell--5-col-phone  mdl-color--white mdl-color-text--black">
-            <img class="card-image" src="me.jpg" />
+            <img class="card-image" src="./images/me.jpg" />
           </header>
         </section>
 
         <!-- Android Bootstrap -->
         <section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp">
           <header class="card-image-container section__play-btn mdl-cell mdl-cell--4-col-desktop mdl-cell--3-col-tablet mdl-cell--5-col-phone  mdl-color--white mdl-color-text--black">
-            <img class="card-image" src="bootstrap.png" />
+            <img class="card-image" src="./images/bootstrap.png" />
           </header>
           <div class="mdl-card mdl-cell mdl-cell--8-col-desktop mdl-cell--5-col-tablet mdl-cell--4-col-phone">
             <div class="mdl-card__supporting-text">
@@ -103,7 +100,7 @@
         <!-- StackOverflow -->
         <section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp">
           <header class="card-image-container section__play-btn mdl-cell mdl-cell--4-col-desktop mdl-cell--3-col-tablet mdl-cell--5-col-phone mdl-color--white mdl-color-text--black">
-            <img class="card-image" src="stackoverflow.png" />
+            <img class="card-image" src="./images/stackoverflow.png" />
           </header>
           <div class="mdl-card mdl-cell mdl-cell--8-col-desktop mdl-cell--5-col-tablet mdl-cell--4-col-phone">
             <div class="mdl-card__supporting-text">
@@ -123,7 +120,7 @@
         <!-- Amino Acid Test -->
         <section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp">
           <header class="card-image-container section__play-btn mdl-cell mdl-cell--4-col-desktop mdl-cell--3-col-tablet mdl-cell--5-col-phone mdl-color--white mdl-color-text--black">
-            <img class="card-image" src="acidtest.png" />
+            <img class="card-image" src="./images/acidtest.png" />
           </header>
           <div class="mdl-card mdl-cell mdl-cell--8-col-desktop mdl-cell--5-col-tablet mdl-cell--4-col-phone">
             <div class="mdl-card__supporting-text">
@@ -143,7 +140,7 @@
         <!-- Github -->
         <section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp">
           <header class="card-image-container section__play-btn mdl-cell mdl-cell--4-col-desktop mdl-cell--3-col-tablet mdl-cell--5-col-phone mdl-color--white mdl-color-text--black">
-            <img class="card-image" src="octocat.jpg" />
+            <img class="card-image" src="images/octocat.jpg" />
           </header>
           <div class="mdl-card mdl-cell mdl-cell--8-col-desktop mdl-cell--5-col-tablet mdl-cell--4-col-phone">
             <div class="mdl-card__supporting-text">
@@ -244,7 +241,7 @@
 
       <!-- Contact -->
 
-      <div style="padding-left:0px;padding-right:0px;padding-top:0px;"  class="mdl-layout__tab-panel" id="contact">
+      <div style="padding-left:0px;padding-right:0px;padding-top:0px;" class="mdl-layout__tab-panel" id="contact">
 
         <!-- About Me -->
         <section class="mdl-grid mdl-grid--no-spacing mdl-shadow--2dp">
@@ -253,16 +250,12 @@
             <div class="mdl-card__supporting-text">
               <h2 class="mdl-color-text--grey-900">Email</h2>
               <h4>You can reach me by firing off an email to <a href="mailto:fractalwrench@gmail.com?subject=Website%20Enquiry">fractalwrench@gmail.com</a>.</h4>
+              </br>
               If email isn't your thing, you can contact me via one of the methods below.
-              <ul>
-                <li><a href="https://uk.linkedin.com/in/fractalwrench">LinkedIn</a></li>
-                <li><a href="https://stackoverflow.com/users/5144991/fractalwrench">StackOverflow</a></li>
-                <li><a href="https://twitter.com/fractalwrench">Twitter</a></li>
-              </ul>
             </div>
           </div>
           <header class="card-image-container section__play-btn mdl-cell mdl-cell--4-col-desktop mdl-cell--3-col-tablet mdl-cell--5-col-phone  mdl-color--white mdl-color-text--black">
-            <img class="card-image" src="me.jpg" />
+            <img class="card-image" src="./images/me.jpg" />
           </header>
         </section>
 
@@ -270,7 +263,6 @@
           <div class="mdl-card mdl-cell mdl-cell--12-col">
             <div class="mdl-card__supporting-text">
               <h4 class="mdl-color-text--grey-900">Alternative Contact Methods</h4>
-              If email isn't your thing, you can contact me via one of the methods below.
               <ul>
                 <li><a href="https://uk.linkedin.com/in/fractalwrench">LinkedIn</a></li>
                 <li><a href="https://stackoverflow.com/users/5144991/fractalwrench">StackOverflow</a></li>
@@ -292,7 +284,7 @@
       </footer>
     </main>
   </div>
-  <script src="material.min.js"></script>
+  <script src="./js/material.min.js"></script>
 </body>
 
 </html>

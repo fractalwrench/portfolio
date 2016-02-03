@@ -39,6 +39,10 @@ html, body {
 .mdl-card__actions {
   text-align: center;
 }
+.site-header a {
+  text-decoration: none;
+  color: white;
+}
 
 /* End custom CSS*/
 
