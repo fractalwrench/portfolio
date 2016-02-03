@@ -46,8 +46,8 @@ html, body {
   color: white;
 }
 .header-image {
-  max-height:450px;
-  min-height:450px
+  max-height:350px;
+  min-height:350px
 }
 
 /* End custom CSS*/
