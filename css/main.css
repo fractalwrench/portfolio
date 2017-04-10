@@ -82,61 +82,31 @@ p.paragraph {
 .text-center {
   text-align: center;
 }
-.text-right {
-  text-align: right;
-}
 /*flexbox styles*/
 .flex,
 .spread,
-.center,
-.right,
-.vertical,
 .centervertical {
   display: flex;
 }
 .spread {
   justify-content: space-between;
 }
-.center {
-  align-items: center;
-  justify-content: center;
-}
 .centervertical {
   flex-direction: column;
   justify-content: center;
 }
-.right {
-  justify-content: flex-end;
-}
-.vertical {
-  flex-direction: column;
-}
 /*grid*/
 .col-1,
-.col-2,
-.col-3,
 .col-4,
 .col-5,
 .col-6,
-.col-7,
-.col-8,
-.col-9,
-.col-10,
-.col-11,
 .col-12 {
   padding: 0 20px;
 }
 .col-1 {width: 8.333333%;}
-.col-2 {width: 16.666667%;}
-.col-3 {width: 25%;}
 .col-4 {width: 33.333333%;}
 .col-5 {width: 41.666667%;}
 .col-6 {width: 50%;}
-.col-7 {width: 58.333333%;}
-.col-8 {width: 66.666667%;}
-.col-9 {width: 75%;}
-.col-10 {width: 83.333333%;}
-.col-11 {width: 91.666667%;}
 .col-12 {width: 100%;}
 
 /*containers*/
@@ -204,9 +174,6 @@ p.paragraph {
 	min-height: 240px;
 }
 @media (max-width: 750px) {
-  .socialproof .emoji {
-    font-size: 40px;
-  }
   .testimonial {
   	min-height: inherit;
   }
@@ -216,17 +183,11 @@ p.paragraph {
   .socialproof .col-4:nth-of-type(1) {
   	width: 100%;
   }
-  .socialproof .col-4:not(:nth-of-type(1)) {
-  	width: 50%;
-  }
 }
 @media (max-width: 500px) {
 	.socialproof .col-4:nth-of-type(1) {
 		margin-bottom: 0;
 	}
-  .socialproof .col-4:not(:nth-of-type(1)) {
-  	width: 100%;
-  }
 }.ctas-button,
 .ctas-button-2 {
 	display: inline-block;
@@ -242,21 +203,9 @@ p.paragraph {
 	border: 1px solid white;
 	text-decoration: none;
 }
-.ctas-button-2 {
-	background: transparent;
-	color: white;
-	margin: 0 0 0 10px;
-}
+
 @media (max-width: 440px) {
-	.ctas-button,
-	.ctas-button-2 {
-		display: block;
-		width: 100%;
-		text-align: center;
-	}
-	.ctas-button-2 {
-		margin: 10px 0 0 0;
-	}
+	.ctas-button
 }.footer {
 	padding: 90px 0;
 }
@@ -275,27 +224,12 @@ p.paragraph {
 	text-decoration: none;
 	color: black;
 }
-.iphoneandroid 	.ctas-button:nth-of-type(2) {
-	margin: 0 0 0 10px;
-}
-.ctas-button img,
-.ctas-button span {
-	display: inline-block;
-	vertical-align: middle;
-	opacity: .8;
-}
-.ctas-button img {
-	height: 18px;
-	margin-right: 10px;
-}
+
 @media (max-width: 440px) {
 	.ctas-button {
 		display: block;
 		width: 100%;
 		text-align: center;
-	}
-	.iphoneandroid 	.ctas-button:nth-of-type(2) {
-		margin: 10px 0 0 0;
 	}
 }.feature5 {
 	padding: 90px 0;
@@ -305,26 +239,7 @@ p.paragraph {
 .feature5 .sidedevices {
 	margin-top: 90px;
 }
-.feature5 .emoji {
-	width: 44px;
-	height: 44px;
-	position: absolute;
-	transform: translate3d(calc(-100% - 20px),0,0);
-	/*delete this*/
-	min-width: inherit;
-	z-index: 9999;
-}
-.feature5 .emoji b {
-	font-size: 40px;
-}
-.feature5 .steps:not(:last-of-type) {
-	margin-bottom: 20px;
-}
 @media (max-width: 900px) {
-	.feature5 .header-images {
-		min-height: inherit;
-		margin-top: 60px;
-	}
 	.feature5 .heading {
 		margin-bottom: 50px;
 	}
@@ -337,10 +252,6 @@ p.paragraph {
 	.feature5 .steps {
 		width: 33.33%;
 		padding: 0 20px;
-	}
-	.feature5 .emoji {
-		transform: none;
-		position: relative;
 	}
 	.feature5	.col-5,
 	.feature5	.col-6 {
@@ -355,18 +266,11 @@ p.paragraph {
   	width: 100%;
   	margin-bottom: 30px;
   }
-  .feature5 .steps:not(:nth-of-type(1)) {
-  	width: 50%;
-  }
 }
 @media (max-width: 500px) {
 	.feature5 .steps:nth-of-type(1) {
 		margin-bottom: 0;
 	}
-  .feature5 .steps:not(:nth-of-type(1)) {
-  	width: 100%;
-  	margin-top: 30px;
-  }
 }.feature1 {
 	padding: 90px 0;
 	border-bottom: 1px solid rgba(0,0,0,.1);
@@ -382,21 +286,6 @@ p.paragraph {
 }
 .feature2	.col-6:nth-of-type(3n - 1) {
 	padding: 90px 20px 90px 90px;
-}
-.feature2 .emoji {
-	font-size: 55px;
-	color: black
-}
-@media (max-width: 900px) {
-	.feature2 .emoji {
-    font-size: 40px;
-  }
-	.feature2	.col-6:nth-of-type(1) {
-		padding: 45px 45px 45px 20px;
-	}
-	.feature2	.col-6:nth-of-type(2) {
-		padding: 45px 20px 45px 45px;
-	}
 }
 @media (max-width: 600px) {
 	.feature2 {
