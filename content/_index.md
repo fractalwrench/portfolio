@@ -17,10 +17,10 @@ This website displays some of my work. If you like what you see, feel free to ge
 #### Open-Source Widgets
 Android Bootstrap brings Twitter-style [Bootstrap Widgets](https://getbootstrap.com/) to the Android platform. The source code is available on [GitHub](https://github.com/Bearded-Hen/Android-Bootstrap), which means anyone can use it!
 
-#### Thousands of stars
+#### Thousands of stars
 6,000+ 3rd-party developers have expressed their gratitude with stars - many more have downloaded the project or contributed.
 
-#### Millions of Devices
+#### Millions of Devices
 Code from Android Bootstrap is trusted to run flawlessly on [millions](http://www.appbrain.com/stats/libraries/details/androidbootstrap/android-bootstrap) of Android devices each day, in hundreds of different apps.
 
 
@@ -31,7 +31,7 @@ An educational app for Android which helps university students revise chemical s
 
 
 
-### Experience
+### Experience
 
 #### Bugsnag Ltd
 Software Engineer (July 2017 - Present)
