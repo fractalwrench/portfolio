@@ -1,0 +1,29 @@
+DefaultContentLanguage = "en"
+baseUrl = "https://fractalwrench.co.uk/"
+languageCode = "en-uk"
+title = "Fractalwrench"
+theme = "beautifulhugo"
+
+[Params]
+  subtitle = "Android developer based in Bath/Bristol"
+  logo = "/img/avatar.png"
+  favicon = "/img/favicon.ico"
+  dateFormat = "1st January, 1970"
+  commit = false
+  rss = true
+  comments = true
+
+[[menu.main]]
+  name = "Blog"
+  identifier = "Blog"
+  url = "/posts/"
+
+[Author]
+  name = "Jamie Lynch"
+  website = "fractalwrench.co.uk"
+  email = "fractalwrench@gmail.com"
+  github = "fractalwrench"
+  twitter = "fractalwrench"
+  reddit = "fractalwrench"
+  linkedin = "fractalwrench"
+  stackoverflow = "users/5144991/fractalwrench"
