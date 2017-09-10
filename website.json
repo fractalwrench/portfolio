@@ -1,0 +1,18 @@
+{
+  "IndexDocument": {
+    "Suffix": "index.html"
+  },
+  "RoutingRules": [
+    {
+      "Condition": {
+        "HttpErrorCodeReturnedEquals": "404"
+      },
+      "Redirect": {
+        "HostName": "fractalwrench.co.uk",
+        "HttpRedirectCode": "301",
+        "Protocol": "https",
+        "ReplaceKeyWith": "index.html"
+      }
+    }
+  ]
+}

@@ -6,8 +6,8 @@ theme = "beautifulhugo"
 
 [Params]
   subtitle = "Android developer based in Bath/Bristol"
-  logo = "/img/avatar.png"
-  favicon = "/img/favicon.ico"
+  logo = "img/avatar.png"
+  favicon = "img/favicon.ico"
   dateFormat = "1st January, 2006"
   commit = false
   rss = true
@@ -16,7 +16,7 @@ theme = "beautifulhugo"
 [[menu.main]]
   name = "Blog"
   identifier = "Blog"
-  url = "/posts/"
+  url = "posts"
 
 [Author]
   name = "Jamie Lynch"

@@ -3,7 +3,7 @@ title: "Portfolio"
 subtitle: "Awesome Android Things"
 date: 2017-09-04T19:07:03+01:00
 menu: "main"
-aliases: "/portfolio"
+aliases: "portfolio"
 ---
 
 This website displays some of my work and technical blog posts.
@@ -11,15 +11,15 @@ This website displays some of my work and technical blog posts.
 If you like what you see, please feel free to get in touch by clicking [here](mailto:fractalwrench@gmail.com).
 
 ### Android Bootstrap
-[Android Bootstrap](https://github.com/Bearded-Hen/Android-Bootstrap) brings Twitter-style [Bootstrap Widgets](https://getbootstrap.com/) to the Android platform. With over 6,000 stars on Github, this project runs on [millions](http://www.appbrain.com/stats/libraries/details/androidbootstrap/android-bootstrap) of Android devices each day.
+[Android Bootstrap](https://github.com/Bearded-Hen/Android-Bootstrap) brings Twitter-style [Bootstrap Widgets](https://getbootstrap.com/) to the Android platform. With over 6,000 stars on Github, this project runs on [millions](https://www.appbrain.com/stats/libraries/details/androidbootstrap/android-bootstrap) of Android devices each day.
 
-![Android Bootstrap screenshot](/img/bootstrap_img.png)
+![Android Bootstrap screenshot](img/bootstrap_img.png)
 
 
 ### Amino Acid Test
 An educational app for Android which helps university students revise chemical structures. 15k+ downloads, 4.5+ star rating, freely available on [Google Play](https://play.google.com/store/apps/details?id=com.fractalwrench.acidtest).
 
-![Amino Acid Test screenshot](/img/aa_img.png)
+![Amino Acid Test screenshot](img/aa_img.png)
 
 
 ### Experience
