@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Fractalwrench</title>
+    <link>https://fractalwrench.co.uk/</link>
+    <description>Recent content on Fractalwrench</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-uk</language>
+    <managingEditor>fractalwrench@gmail.com (Jamie Lynch)</managingEditor>
+    <webMaster>fractalwrench@gmail.com (Jamie Lynch)</webMaster>
+    <lastBuildDate>Mon, 04 Sep 2017 19:07:03 +0100</lastBuildDate>
+    
+	<atom:link href="https://fractalwrench.co.uk/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Hello Hugo!</title>
+      <link>https://fractalwrench.co.uk/posts/hello-hugo/</link>
+      <pubDate>Sun, 03 Sep 2017 16:07:19 +0100</pubDate>
+      <author>fractalwrench@gmail.com (Jamie Lynch)</author>
+      <guid>https://fractalwrench.co.uk/posts/hello-hugo/</guid>
+      <description>Hello World, and Hello Hugo!
+This website has seen many iterations over the past few years, and is now built using the Hugo static site generator.
+Editing markdown text is much easier than editing HTML, so this blog post is likely to be the first of many&amp;hellip;</description>
+    </item>
+    
+  </channel>
+</rss>
