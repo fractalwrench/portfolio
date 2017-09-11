@@ -1,8 +1,7 @@
 ---
-title: "Portfolio"
+title: "Fractalwrench"
 subtitle: "Awesome Android Things"
 date: 2017-09-04T19:07:03+01:00
-menu: "main"
 aliases: "portfolio"
 ---
 

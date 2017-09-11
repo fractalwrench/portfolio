@@ -3,6 +3,7 @@ baseUrl = "https://fractalwrench.co.uk/"
 languageCode = "en-uk"
 title = "Fractalwrench"
 theme = "beautifulhugo"
+googleAnalytics = 106232170
 
 [Params]
   subtitle = "Android developer based in Bath/Bristol"
@@ -17,6 +18,11 @@ theme = "beautifulhugo"
   name = "Blog"
   identifier = "Blog"
   url = "posts"
+
+[[menu.main]]
+  name = "portfolio"
+  identifier = "portfolio"
+  url = "/"
 
 [Author]
   name = "Jamie Lynch"
