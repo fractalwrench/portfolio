@@ -1,7 +1,8 @@
 # Generate files
-rm -rf /deploy;
-cp -r public deploy
+rm -rf deploy;
+rm -rf public;
 hugo;
+cp -r public deploy;
 
 # Minify html
 html-minifier --collapse-whitespace --remove-comments --remove-optional-tags --remove-redundant-attributes --remove-script-type-attributes --remove-tag-whitespace --use-short-doctype --input-dir deploy --output-dir deploy --file-ext html
