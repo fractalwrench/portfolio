@@ -12,13 +12,13 @@ If you like what you see, please feel free to get in touch by clicking [here](ma
 ### Android Bootstrap
 [Android Bootstrap](https://github.com/Bearded-Hen/Android-Bootstrap) brings Twitter-style [Bootstrap Widgets](https://getbootstrap.com/) to the Android platform. With over 6,000 stars on Github, this open-source project runs on [millions](https://www.appbrain.com/stats/libraries/details/androidbootstrap/android-bootstrap) of Android devices each day.
 
-![Android Bootstrap screenshot](img/bootstrap_img.png)
+![Android Bootstrap screenshot](img/bootstrap_img.jpg)
 
 
 ### Amino Acid Test
 An educational app for Android which helps university students revise chemical structures. 15k+ downloads, 4.5+ star rating, freely available on [Google Play](https://play.google.com/store/apps/details?id=com.fractalwrench.acidtest).
 
-![Amino Acid Test screenshot](img/aa_img.png)
+![Amino Acid Test screenshot](img/aa_img.jpg)
 
 
 ### Work Experience
