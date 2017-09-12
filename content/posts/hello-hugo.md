@@ -1,9 +1,10 @@
 ---
-title: "Hello Hugo!"
+title: "Hello World, Hello Android!"
+subtitle: "Migrating my Android portfolio to Hugo"
 date: 2017-09-03T16:07:19+01:00
 ---
-Hello World, and Hello Hugo!
+Hello World, Hello Hugo, and Hello Android!
 
-This website has seen many iterations over the past few years, and is now built using the [Hugo](https://gohugo.io/) static site generator.
+This website originally started off as a portfolio site with some hacked together HTML. Over time, as I developed more Android applications, that workflow got a bit too complex. Therefore, I've moved the entire site over to the [Hugo](https://gohugo.io/) static site generator for the foreseeable future, which makes things a lot easier.
 
-Editing markdown text is much easier than editing HTML, so this blog post is likely to be the first of many...
+The original focus of the site was just a portfolio displaying Android, iOS, and other mobile projects which I'd completed during my time in the Bath/Bristol area. However, since editing markdown text is much easier than editing HTML, this blog post is likely to be the first of many! Stay tuned...
