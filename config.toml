@@ -3,7 +3,7 @@ baseUrl = "https://fractalwrench.co.uk/"
 languageCode = "en-uk"
 title = "Fractalwrench"
 theme = "beautifulhugo"
-googleAnalytics = "106232170"
+googleAnalytics = "UA-106232170-1"
 
 [Params]
   subtitle = "Android developer based in Bath/Bristol"
