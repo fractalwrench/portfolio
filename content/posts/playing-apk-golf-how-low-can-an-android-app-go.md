@@ -53,36 +53,38 @@ It feels like the easiest initial target will be reducing our dependency on Exte
 
 Let's back up that claim with some evidence, using a tool recently introduced in Android Studio 2.2 - the APK Analyser.
 
-![Apk Analyser Screenshot](/img/apkgolf/apk-analyser-1.png)
+![Apk Analyser Screenshot](/img/apkgolf/apk-analyser-1.jpg)
 
 This shows us the internals of the generated APK, and can be accessed by double-clicking on an APK in the project panel, or by selecting Build > Analyse APK.
 
 ### APK Structure
 
-- classes.dex: 74%
+- `classes.dex`: 74%
 - res: 20%
-- resources.arsc: 4%
-- META-INF: 2%
-- AndroidManifest.xml: <1%
+- `resources.arsc`: 4%
+- `META-INF`: 2%
+- `AndroidManifest.xml`: <1%
 
 <!-- TODO briefly describe what these actually do for the Android novice!  -->
 
 
 `classes.dex` is the biggest culprit and therefore our first target, taking up over 73% of the APK size. This contains all our compiled Java classes which have been run through a Dexer. Although we only defined one Activity in our app, this Dex file has a massive 1,622 classes which define 12,622 methods, and references 17,381 methods in total. That's already more than a quarter of the infamous 64k Dex limit!
 
-Our res directory looked fairly simple in the IDE, but that's certainly not the case in our generated APK. We have a vast number of layout files, drawables, and animations. These weigh in at around 20% of the APK size, so present the second target. Our values files have been combined into `resources.arsc`, which performs some clever mapping of drawables (TODO need to read up on that a bit more and include something)
+Our res directory looked fairly simple in the IDE, but that's certainly not the case in our generated APK. We have a vast number of layout files, drawables, and animations. These weigh in at around 20% of the APK size, so present the second target. Our values files have been combined into `resources.arsc`, which performs some clever mapping of drawables
 
-![Apk Analyser Screenshot](/img/apkgolf/apk-analyser-2.png)
+#(TODO need to read up on that a bit more and include something)
+
+![Apk Analyser Screenshot](/img/apkgolf/apk-analyser-2.jpg)
 
 Other items include a `META-INF` folder which contains `CERT.SF`, `MANIFEST.MF`, and `CERT.RSA` files, all of which are related to the APK signature we just generated.
 
-![Manifest.mf](/img/apkgolf/manifest-mf.png)
+![Manifest.mf](/img/apkgolf/manifest-mf.jpg)
 
-And of course, we have the AndroidManifest, which looks much the same as it does in the IDE, with the exception of the resource IDs, which now point to a location within the resources.arsc file.
+And of course, we have the AndroidManifest, which looks much the same as it does in the IDE, with the exception of the resource IDs, which now point to a location within the `resources.arsc` file.
 
 ### Low-hanging Fruit
 
-First off, there's one obvious trick that we haven't tried - enabling minification in our app's build.gradle file. Let's give that a go and observe the results.
+First off, there's one obvious trick that we haven't tried - enabling minification in our app's `build.gradle` file. Let's give that a go and observe the results.
 
 ```
 android {
@@ -97,7 +99,7 @@ android {
 ```
 
 
-proguard-rules.pro (due to an apparent bug in studio, we need to specify the activity should be kept)
+`proguard-rules.pro` (due to an apparent bug in studio, we need to specify the activity should be kept)
 
 ```
 -keep class com.fractalwrench.** { *; }
@@ -156,13 +158,13 @@ public class MainActivity extends Activity
 Let's generate an APK as we did before and see what's changed.
 
 ### 108 Kb bytes (87% reduction)
-Holy cow, we just achieved nearly a 10x reduction in file size, starting from 786Kb, down to 108Kb. The only discernible change in our primitive application is that the Toolbar appears with a different color, as it's now using the OS default theme rather than one we supplied.
+Holy cow, we just achieved nearly a 10x reduction in file size, starting from 786Kb, down to 108Kb. The only discernible change in our primitive application is that the Toolbar appears with a different colour, as it's now using the OS default theme rather than one we supplied.
 
 ![No Support Library App Screenshot](/img/apkgolf/no-support-lib-app.png)
 
  What do the APK internals look like now?
 
-The res directory takes up nearly 95% of the APK size, as we'd forgotten about all those launcher icons. If these icons were provided by our designer, then we could try converting them to WebP, which is a more efficient file format supported on API 15 and above. Fortunately, Google has already thought of this for our icons, and the images themselves have already been optimised. In an ordinary app, you could also try running [ImageOptim](https://imageoptim.com/mac) to optimise PNGs, and strip any unnnecessary metadata such as EXIF.
+The res directory takes up nearly 95% of the APK size, as we'd forgotten about all those launcher icons. If these icons were provided by our designer, then we could try converting them to WebP, which is a more efficient file format supported on API 15 and above. Fortunately, Google has already thought of this for our icons, and the images themselves have already been optimised. In an ordinary app, you could also try running [ImageOptim](https://imageoptim.com/mac) to optimise PNGs, and strip any unnecessary metadata such as EXIF.
 
 ### Bad Citizenry
 We don't *really* need to support multiple versions of a launch icon, as that's simply more of a courtesy to allow launchers to display similarly styled icons. In fact, we could be a really bad citizen, by just supplying a 1-pixel black dot, and adding it to the unqualified `res/drawable` folder.
@@ -186,7 +188,7 @@ Let's optimise `resources.arsc` first. It currently references:
 
 
 #### Layout file (6262 bytes, 9% reduction)
-Let's try removing the layout file, and invoking the `TextView` directly. This tradeoff will reduce `resources.arsc` and res directory, but will increase the size of classes.dex, as we're now referencing `TextView` methods such as `setText` from the Android framework, rather than relying on XML layout inflation doing that for us.
+Let's try removing the layout file, and invoking the `TextView` directly. This tradeoff will reduce `resources.arsc` and res directory, but will increase the size of `classes.dex`, as we're now referencing `TextView` methods such as `setText` from the Android framework, rather than relying on XML layout inflation doing that for us.
 
 ```
 TextView textView = new TextView(this);
@@ -231,7 +233,7 @@ integer ID 0xppttiii (translated to a symbolic name via R.java), where
 
 So what happens if we don't reference an image from our app, and rely on something that the Android Framework provides instead, using the 0x01 namespace? Let's update our manifest icon attribute to point at a framework resource, and delete our entire res directory.
 
-![System app icon Screenshot](/img/apkgolf/system-app-icon.png)
+![System app icon Screenshot](/img/apkgolf/system-app-icon.jpg)
 
 ```
 android:icon="@android:drawable/btn_star"
@@ -253,9 +255,9 @@ android:supportsRtl="true"
 ```
 
 #### Proguard hack (4984 bytes, 5% reduction)
-Our proguard hack earlier is keeping a few classes lying around which we don't need, such as BuildConfig and R. Let's refine that proguard rule and get rid of them.
+Our Proguard hack earlier is keeping a few classes lying around which we don't need, such as `BuildConfig` and `R`. Let's refine that Proguard rule and get rid of them.
 
-![classes.dex](/img/apkgolf/classes-dex.png)
+![classes.dex](/img/apkgolf/classes-dex.jpg)
 
 Our dex file now defines 1 class and 2 methods, and references 7 in total when framework methods are considered.
 
@@ -267,12 +269,12 @@ Our dex file now defines 1 class and 2 methods, and references 7 in total when f
 Let's give our classes an obfuscated name. Proguard would do this for non-Activity files, but the manifest needs to know the name of the class to launch, so this isn't obfuscated by default.
 
 `MainActivity -> c.java`
-package name renamed to c.c (minimum of two required) (also build.gradle)
+package name renamed to c.c (minimum of two required) (also `build.gradle`)
 
 We definitely won't be able to submit our APK to Google Play now, but our hypothetical user doesn't care.
 
 ### META-INF (3307 bytes, 33% reduction)
-`META-INF.mf` contains the v1 signature for the APK. Let's try generating with only the v2 signature instead, as this offers better protection as it signs the full APK, rather than just the JAR. It should also remove the `META-INF.mf`, because in v2 the signing is located at the end of the ZIP file, and isn't visible in the APK analyser tool.
+`META-INF` contains the v1 signature for the APK. Let's try generating with only the v2 signature instead, as this offers better protection as it signs the full APK, rather than just the JAR. It should also remove the `META-INF` files, because in v2 the signing is located at the end of the ZIP file, and isn't visible in the APK analyser tool.
 
 To do this, we'll simply uncheck the v1 signature checkbox in the Android Studio UI, when generating a signed APK. Only signing with v1 produces an APK of 3511 bytes, whereas only signing with v2 produces an APK of 3307 bytes. In v2 the `CERT.RSA` and `CERT.SF` have disappeared. We have a winner!
 
@@ -381,7 +383,7 @@ adb shell am start -a android.intent.action.MAIN -n c.c/.c
 ```
 
 ### Where we're going, we don't need classes (2179 bytes, 12% reduction)
-Let's take this to the logical conclusion, and get rid of our activity, replacing it with a custom `Application` class. This should still generate a valid, albeit useless APK. Our `classes.dex` file size will be reduced, as we are no longer referencing any TextView, Bundle, or Activity methods - only the Application constructor. Our manifest now looks like this:
+Let's take this to the logical conclusion, and get rid of our activity, replacing it with a custom `Application` class. This should still generate a valid, albeit useless APK. Our `classes.dex` file size will be reduced, as we are no longer referencing any `TextView`, `Bundle`, or `Activity` methods - only the `Application` constructor. Our manifest now looks like this:
 
 ```
 package c.c;
@@ -400,7 +402,7 @@ public class c extends Application {
 ```
 From now on, we can verify that our app has actually been installed by adb reporting success or failure. Or, we can have a look in the Settings app.
 
-![Apk installation proof](/img/apkgolf/package-installation-proof.png)
+![Apk installation proof](/img/apkgolf/package-installation-proof.jpg)
 
 ### Dex Optimisation (1961 bytes, 10% reduction)
 
@@ -411,18 +413,36 @@ I did a bunch of research into the Dex file format for this. But to cut a long s
 
 Therefore, we're going to open up the file in HexFiend, delete its contents, then save it as a zero-byte file, gaining us a 10% reduction.
 
-### Do the stupid things (1777 bytes, 9% reduction)
+### Sophisticated approach (1961 bytes, 0% reduction)
+Our manifest from the unsigned APK is in a binary format which doesn't appear to be documented. There appear to be a few interesting things that are revealed by its structure. The first 4 bytes signify a version number (38), and the next 2 bytes show the size of the file (660).
+
+Let's try deleting a byte by setting the targetSdkVersion to 1, and updating the file size header to 659. Unfortunately this doesn't pass verification, so it looks like there's some extra complexity here which we'll have to revisit.
+
+The next step is to substitute every item with dummy characters without changing the file size, to see if there's some sort of checksum in place. This will show which attributes cannot be removed. Surprisingly, it looks like we can substitute quite a few of the keys with no ill-effect.
+
+Values that can't be changed:
+
+```
+manifest
+package
+```
+
+### Stupid approach (1777 bytes, 9% reduction)
 After several hours researching how a binary XML manifest is encoded, I took the high-tech approach of systematically replacing bytes with 0, and seeing whether the APK installed.
 
 Fun fact, the following passes validation on a Nexus 5X. Warning: if you do this in production, it will cause the Google Engineer responsible for maintaining the Android framework class `BinaryXMLParser.java` to scream very loudly into a pillow.
 
-![Non-essential manifest parts](/img/apkgolf/non-essential-manifest-parts.png)
+![Non-essential manifest parts](/img/apkgolf/non-essential-manifest-parts.jpg)
 
 This doesn't change the bytes in the file, but if you remember our zip compression hack from earlier, this will reduce the overall size of the APK. It will also make it a lot easier to see what the important parts of the manifest are.
 
 This also leaves us with a nice view of how the manifest file is structured using HexFiend, as we can hide the null bytes.
 
+UTF-8:
 ![Minified AndroidManifest](/img/apkgolf/minified-android-manifest.png)
+
+Hexadecimal:
+![Minified AndroidManifest](/img/apkgolf/minified-android-manifest-hex.png)
 
 ### Done? (1757 bytes, 1% reduction)
 Let's inspect the final APK.
@@ -440,6 +460,7 @@ In summary, there is such a thing as too much optimisation, and I should really 
 
 
 
+### Further work
 There are various other things we could probably do to shave off a few more bytes, such as:
 
 - Brute-force generation of keystores to improve compression
@@ -450,62 +471,18 @@ But this was only meant to take an afternoon to complete, so I'll leave that as 
 
 
 
+- Crazy hacks the reader can think of? Get in touch.
 
 
 
+# TODO
 
-
-
-
-Looking at the manifest in the unzipped APK, we can see that it's in a weird binary format rather than XML. This will make optimization a bit harder, so let's try and dig into what it's doing.
-https://stackoverflow.com/questions/2097813/
-https://justanapplication.wordpress.com/category/android/android-binary-xml/
-https://github.com/clearthesky/apk-parser/blob/master/src/main/java/net/dongliu/apk/parser/parser/BinaryXmlParser.java
-
-
-No docs I could find :'(
-Mutating string values works ok, so there's probably no checksum enforced
-
-
-
-<!-- TODO hexfiend pic  -->
-
-Our manifest from the unsigned APK is in a binary format which doesn't appear to be documented. There appear to be a few interesting things that are revealed by its structure. The first 4 bytes signify a version number (38), and the next 2 bytes show the size of the file (660).
-
-Let's try deleting a byte by setting the targetSdkVersion to 1, and updating the file size header to 659. Unfortunately this doesn't pass verification, so it looks like there's some extra complexity here which we'll have to revisit.
-
-The next step is to substitute every item with dummy characters without changing the file size, to see if there's some sort of checksum in place. This will show which attributes cannot be removed. Surprisingly, it looks like we can substitute quite a few of the keys with no ill-effect.
-
-Values that can't be changed:
-
-```
-manifest
-package
-```
-
-
-
-
-"""
-String has length in the first 2 bytes, repeated twice! (e.g. 1313minSdkVersion)
-
-```
-private static String getLengthPrefixedUtf8EncodedString(ByteBuffer encoded)
-               throws XmlParserException {
-           // If the length (in bytes) is 0x7f or lower, it is stored as a single uint8. Otherwise,
-           // it is stored as a big-endian uint16 with highest bit set. Thus, the range of
-           // supported values is 0 to 0x7fff inclusive.
-```
-"""
 
 
 
 
 Writeup notes:
 - Host repo with smallest APK ever
-- Crazy hacks the reader can think of? Get in touch.
-- Removing everything might not be feasible depending on your needs in Android, as the Support Lib has awesome functionality and makes it easy to develop. However, it's good to know how to do it.
-- Perseverance (even when you think you've optimised something, you can probably go further)
 - Took about 5 minutes to get 99% of the gains, and several Sunday afternoons to realise the rest. You have to decide whether it's worth the engineering effort.
 - MEASURE EVERYTHING. You WILL be surprised by what takes up the most space, or takes the longest time to execute in your application.
 - WTFs or things that don't make sense are often a clue
