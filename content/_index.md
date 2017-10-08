@@ -7,7 +7,7 @@ aliases: "portfolio"
 
 This website displays some of my work as an Android Developer, and technical blog posts on software in general.
 
-If you like what you see, please feel free to get in touch by clicking [here](mailto:fractalwrench@gmail.com).
+If you like what you see, please feel free to get in touch by clicking [here](https://twitter.com/fractalwrench).
 
 ### Android Bootstrap
 [Android Bootstrap](https://github.com/Bearded-Hen/Android-Bootstrap) brings Twitter-style [Bootstrap Widgets](https://getbootstrap.com/) to the Android platform. With over 6,000 stars on Github, this open-source project runs on [millions](https://www.appbrain.com/stats/libraries/details/androidbootstrap/android-bootstrap) of Android devices each day.
@@ -42,4 +42,4 @@ My degree specialised in bioinformatics, a field which utilises software and com
 - Young Enterprise Award
 
 ### Like what you see?
-[Get in touch today.](mailto:fractalwrench@gmail.com)
+[Get in touch today.](https://twitter.com/fractalwrench)
