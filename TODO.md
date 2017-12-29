@@ -1,6 +1,4 @@
-seo
-about
-portfolio of projects
-blog
-contact
-external links
+- seo
+- Abs vs rel links?
+- Content!!!
+- Monetisation/donation link

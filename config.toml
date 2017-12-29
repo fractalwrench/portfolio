@@ -19,11 +19,6 @@ googleAnalytics = "UA-106232170-1"
   identifier = "Blog"
   url = "posts"
 
-[[menu.main]]
-  name = "portfolio"
-  identifier = "portfolio"
-  url = "/"
-
 [Author]
   name = "Jamie Lynch"
   website = "fractalwrench.co.uk"
