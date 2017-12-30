@@ -2,3 +2,4 @@
 - Abs vs rel links?
 - Content!!!
 - Monetisation/donation link
+- Make deploys easier + reversible
