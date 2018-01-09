@@ -1,19 +1,23 @@
 ---
 title: "The machine that goes PING"
-subtitle: "Detecting completed builds with Gradle Plugin"
+subtitle: "Detecting build completion with a custom Gradle Plugin"
 date: 2018-01-15T17:00:00+01:00
 ---
 
-- What are we doing? 2 sentences at most.
-https://youtu.be/NcHdF1eHhgc?t=160
+[Gradle](https://gradle.org/) is an 800lb magical gorilla that can be incredibly intimidating at first glance.
 
-## Playing a sound on build completion
+We're going to harness some of Gradle's superpowers by writing a plugin that alerts us whenever a build completes.
+
+This guide will teach you how to turn a shiny MacBook Pro into a [machine that goes PING](https://youtu.be/NcHdF1eHhgc?t=160).
 
 
+
+
+### What is a Gradle Plugin?
+<!-- TODO -->
 https://en.wikipedia.org/wiki/Duck_typing
 If it looks like a duck and quacks like a duck, it will throw a `RuntimeException` at the worst possible moment.
 
-### What is a Gradle Plugin?
 
 ### Setting up the buildSrc folder
 
@@ -249,4 +253,4 @@ apply plugin: "com.fractalwrench.pingmachine"
 ```
 
 ### Thank You
-I hope you've enjoyed learning about Gradle Script Kotlin, and making your machine go PING. If you have any questions, feedback, or would like to suggest a topic for me to write about, please [get in touch via Twitter](https://twitter.com/fractalwrench)!
+I hope you've enjoyed learning about creating custom Gradle Plugins, and have upgraded your workstation to a machine that goes _PING_. If you have any questions, feedback, or would like to suggest a topic for me to write about, please [get in touch via Twitter](https://twitter.com/fractalwrench)!
