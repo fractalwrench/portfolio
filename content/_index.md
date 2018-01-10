@@ -1,5 +1,5 @@
 ---
-title: "Fractalwrench | Android Developer"
+title: "Fractalwrench | UK Android Developer"
 subtitle: "Android Development and technical tomes on Software"
 date: 2017-09-04T19:07:03+01:00
 aliases: "portfolio"
