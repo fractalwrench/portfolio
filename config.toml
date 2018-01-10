@@ -6,7 +6,7 @@ theme = "beautifulhugo"
 googleAnalytics = "UA-106232170-1"
 
 [Params]
-  subtitle = "Android developer based in Bath/Bristol"
+  subtitle = "UK Android developer based in Bath/Bristol"
   logo = "img/avatar.png"
   favicon = "img/favicon.ico"
   dateFormat = "1st January, 2006"
