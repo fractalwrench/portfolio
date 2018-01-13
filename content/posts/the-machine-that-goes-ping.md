@@ -8,16 +8,29 @@ date: 2018-01-15T17:00:00+01:00
 
 We're going to harness some of Gradle's superpowers by writing a plugin that alerts us whenever a build completes.
 
-This guide will teach you how to turn a shiny MacBook Pro into a [machine that goes PING](https://youtu.be/NcHdF1eHhgc?t=160).
+Essentially, this guide will teach you how to turn a shiny MacBook Pro into a [machine that goes PING](https://youtu.be/NcHdF1eHhgc?t=160).
 
+## What is Gradle
 
+[Gradle](https://docs.gradle.org/4.4.1/userguide/userguide.html) is
 
+https://developer.android.com/studio/build/index.html
+
+<!-- TODO what is Gradle -->
 
 ### What is a Gradle Plugin?
+
+You've been using it whether you knew it or not.
+https://developer.android.com/studio/releases/gradle-plugin.html
+
 <!-- TODO -->
 https://en.wikipedia.org/wiki/Duck_typing
 If it looks like a duck and quacks like a duck, it will throw a `RuntimeException` at the worst possible moment.
 
+
+## Writing our own plugin
+
+<!-- TODO Delivery Mechanisms -->
 
 ### Setting up the buildSrc folder
 
@@ -57,9 +70,11 @@ We can lookup a specific task by the following method:
 We can define our own task using a closure, and tell the build task to execute it last.
 ```
 assembleTask.doLast {
-    println("I'm a plugin!")
+    project.logger.lifecycle("I'm a plugin!")
 }
 ```
+
+
 
 Output when running assemble:
 ```
@@ -156,6 +171,9 @@ class PingPlugin implements Plugin<Project> {
 }
 ```
 
+<!-- TODO this is broken for multiple outputs! use mustRunAfter on the collection of assemble tasks -->
+
+
 ### Plugin Extensions
 
 https://docs.gradle.org/current/userguide/custom_plugins.html#sec:getting_input_from_the_build
@@ -171,6 +189,8 @@ Create extension within apply method:
 ```
 project.extensions.create("pingPlugin", PingPluginExtension)
 ```
+
+<!-- TODO explain how `android { buildTypes { release { }}}` would work -->
 
 Download extra sound "foo.wav" and place in resources folder
 
