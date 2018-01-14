@@ -159,8 +159,6 @@ class AudioPlayer implements LineListener {
 
 If we assemble the app now, we should hear a ping at the end of the build!
 
-
-
 ### Build Variants
 
 With great power comes great responsibility. You may have noticed that this doesn't work when running the app in debug mode from Android Studio, because this action doesn't execute the `assemble` task.
@@ -169,7 +167,7 @@ The reason for this is that Gradle has [3 build phases](https://docs.gradle.org/
 
 The Android Gradle Plugin adds its own tasks before the execution phase, most notably the `assembleDebug` and `assembleRelease` tasks.
 
-To fix our oversight, we can ask Gradle to iterate through all the build variants in our project after these tasks have been added. For each variant, we can gain access to the assemble task, and add on our own task to play the audio clip.
+To fix our oversight, we can ask Gradle to iterate through all the build variants in our project after these tasks have been added. For each variant, we can gain access to the assemble task for each output, and add on our own task to play the audio clip.
 
 ```
 class PingPlugin implements Plugin<Project> {
@@ -196,48 +194,52 @@ class PingPlugin implements Plugin<Project> {
 }
 ```
 
+A minor bug with this naïve approach is that the ping will occur every time a variant is assembled when we're building multiple outputs. As with all bugs, this could be considered a feature if you use APK splits, product flavors, and intensely dislike all your coworkers.
 
-
-
-
-
-
-
-
-
-
-
-### Multiple Outputs
-
-
-
-<!-- TODO this is broken for multiple outputs! use mustRunAfter on the collection of assemble tasks -->
-
-
-
+ We can fix that at a later time - for now let's expose an extension that allows developers to control the behaviour of our plugin.
 
 ### Plugin Extensions
 
-https://docs.gradle.org/current/userguide/custom_plugins.html#sec:getting_input_from_the_build
+You're already [familiar with extensions](https://google.github.io/android-gradle-dsl/current/com.android.build.gradle.AppExtension.html), whether you know it or not. For example, most of us have set the `versionName` for our app before:
 
-Add to top of `PingPlugin.groovy`
+```
+android {
+    defaultConfig {
+        versionName "3.5.7"
+    }
+}
+```
+
+The `android` extension is supplied as part of the AGP, and allows us to specify various build parameters without needing to hack on Gradle tasks ourselves.
+
+#### Example
+
+Creating our own extension should be [very straightforward](https://docs.gradle.org/current/userguide/custom_plugins.html#sec:getting_input_from_the_build
+). Let's start by downloading an extra audio file, name it `"foo.wav"`, and place it in the resources folder.
+
+
+At the top of `PingPlugin.groovy`, we can define our extension object:
+
 ```
 class PingPluginExtension {
     String audioFile = "audio.wav" // use default value
 }
 ```
 
-Create extension within apply method:
+Within the `apply` method, we'll create the extension in our project:
+
 ```
 project.extensions.create("pingPlugin", PingPluginExtension)
 ```
 
-<!-- TODO explain how `android { buildTypes { release { }}}` would work -->
+We can then update our play method to access the `audioFile` field on the plugin:
 
-Download extra sound "foo.wav" and place in resources folder
+```
+InputStream is = getClass().classLoader.getResourceAsStream(project.pingPlugin.audioFile)
 
-Configure within app module:
+```
 
+And finally, we could configure the plugin from our app's build script:
 
 ```
 pingPlugin {
@@ -245,66 +247,87 @@ pingPlugin {
 }
 ```
 
-Update our play method
+For now, we'll skip adding an extension, and focus on publishing our plugin as a JAR, so that anybody else in the world can use it in their project.
+
+### Publishing the final product
+
+#### Standalone Project
+
+We've outgrown the `buildSrc` folder. It's time to create a [standalone Android Studio project](
+https://docs.gradle.org/current/userguide/custom_plugins.html#sec:custom_plugins_standalone_project) for the plugin.
+
+We'll start by deleting all the auto-generated Android code and app module, which we won't be needing. We will then copy our `src/main` directory across to the root of the new project.
+
+
+
+
+A couple of additional steps are required in order to build a standalone project. First, we need to add a few dependencies that were previously implicit:
 
 ```
-InputStream is = getClass().classLoader.getResourceAsStream(project.pingPlugin.audioFile)
+plugins {
+    id 'groovy'
+}
 
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+    compile 'com.android.tools.build:gradle:3.0.1'
+}
+```
+
+Secondly, we need to tell Gradle where the plugin has been implemented. This is achieved by adding a properties file that contains the canonical class name. For our project, we would need to create a file called `META-INF/gradle-plugins/com.fractalwrench.pingmachine.properties`, and point at the following class:
+
+```
+implementation-class=com.fractalwrench.pingmachine.PingPlugin
 ```
 
 
-### Converting to Gradle Script Kotlin
+#### Automated publishing
 
-KOTLIN ALL THE THINGS
-https://blog.gradle.org/kotlin-meets-gradle
-https://github.com/gradle/kotlin-dsl
+We're going to publish to the Gradle Plugin Portal, so will need to sign up for an account, and setup an API key as [detailed here](https://plugins.gradle.org/docs/submit). Fortunately a [publishing plugin](https://plugins.gradle.org/docs/publish-plugin) is available which automates the entire process into one task.
 
-Better autocomplete/IDE features as statically typed
+We can apply the plugin by adding the Plugin Portal's maven repository:
 
-Samples Dir is best documentation atm:
-https://github.com/gradle/kotlin-dsl/tree/master/samples
+```
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "com.gradle.publish:plugin-publish-plugin:0.9.9"
+    }
+}
+apply plugin: "com.gradle.plugin-publish"
+```
 
-Kotlin Gradle Script is bundled in gradlew, newer = better (or at least more bleeding edge)
+And then we can configure the plugin with our project information through its extension:
 
-Everything suffixed with .kts
+```
+pluginBundle {
+    website = 'https://fractalwrench.co.uk'
+    vcsUrl = 'https://github.com/fractalwrench/the-machine-that-goes-ping.git'
 
+    plugins {
+        pingPlugin {
+            id = 'com.fractalwrench.pingmachine'
+            description = 'Makes a ping noise on build completion'
+            displayName = 'Ping Machine'
+            tags = ['android']
+            version = '1.0.0'
+        }
+    }
+}
 
-Not going to use it yet because highlighting is broken in Android Studio 3: https://github.com/gradle/kotlin-dsl/issues/584
+// JavaDoc errors may fail the publish task, so disable it
+tasks.withType(Javadoc).all { enabled = false }
+```
 
-
-
-
-<!-- TODO -->
-https://en.wikipedia.org/wiki/Duck_typing
-If it looks like a duck and quacks like a duck, it will throw a `RuntimeException` at the worst possible moment.
-
-
-
-### Publishing Final product
-
-- Create separate project for plugin + add bintray gradle plugin to simplify upload process: https://github.com/bintray/gradle-bintray-plugin
-
-- Add `META-INF/gradle-plugins/com.fractalwrench.pingmachine.properties` file pointing at class:
-`implementation-class=com.fractalwrench.pingmachine.PingPlugin`
-
-
-Link to github
-
-Signup to Gradle plugin portal and coopy api key info to gradle folder on your machine:
-https://plugins.gradle.org/docs/submit
-
-Apply publishing plugin following instructions here
-https://plugins.gradle.org/docs/publish-plugin
-
-Javadoc fails, disable tasks by placing at bottom:
-`tasks.withType(Javadoc).all { enabled = false }``
-
-https://github.com/bintray/gradle-bintray-plugin
-
+We'll make our final checks, then publish by running the `./gradlew publishPlugins` task.
 
 ### Try it in a fresh Android Project
-Get it on Github:
-https://github.com/fractalwrench/the-machine-that-goes-ping
+Congratulations, we've just published a gradle plugin! Now we need to apply it to our Android project:
 
 ```
 buildscript {
@@ -320,6 +343,8 @@ buildscript {
 
 apply plugin: "com.fractalwrench.pingmachine"
 ```
+
+Whenever we build our project, we should hear a ping. You can view the [source on Github ](https://github.com/fractalwrench/the-machine-that-goes-ping) for a full example.
 
 ### Thank You
 I hope you've enjoyed learning about creating custom Gradle Plugins, and have upgraded your workstation to a machine that goes _PING_. If you have any questions, feedback, or would like to suggest a topic for me to write about, please [get in touch via Twitter](https://twitter.com/fractalwrench)!
