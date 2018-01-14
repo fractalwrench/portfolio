@@ -1,7 +1,7 @@
 ---
 title: "The machine that goes PING"
-subtitle: "Detecting build completion with a custom Gradle Plugin"
-date: 2018-01-15T17:00:00+01:00
+subtitle: "Developing a Gradle Plugin that detects build completion"
+date: 2018-01-13T00:00:00+01:00
 ---
 
 [Gradle](https://gradle.org/) is an 800lb magical gorilla that can be incredibly intimidating at first glance.
@@ -12,38 +12,37 @@ Essentially, this guide will teach you how to turn a shiny MacBook Pro into a [m
 
 ## What is Gradle
 
-[Gradle](https://docs.gradle.org/4.4.1/userguide/userguide.html) is simply a tool that builds projects from source code, and provides a very flexible API for manipulating the build along the way. Gradle is the default build tool for Android projects, although alternatives like [Bazel](https://bazel.build/) and [Buck](https://buckbuild.com/) exist.
+[Gradle](https://docs.gradle.org/4.4.1/userguide/userguide.html) is simply a tool that builds a project, and provides a very flexible API for manipulating each step of the process. It's the default build tool for Android projects, although alternatives like [Bazel](https://bazel.build/) and [Buck](https://buckbuild.com/) exist.
 
-The key thing to remember about Gradle is that a project is formed of multiple tasks, all of which can have dependencies on one another.
+Typically when we're developing an Android App, we'll perform a few different actions in the course of a day. We will build the app to ensure that our changes haven't introduced compilation errors. We will run the app on an emulator to ensure that the app doesn't crash at runtime. If we're being good, we'll run instrumented tests on a device.
 
-Typically when we're developing an Android App, we'll perform a few different actions in the course of a day. We will want to build the project to ensure that our changes don't have compilation errors. We will want to run the project on an emulator to ensure that the app doesn't crash at runtime. If we're being good, we'll want to run tests on a device.
+All of these actions are performed by executing [Gradle tasks](https://docs.gradle.org/4.4.1/userguide/tutorial_using_tasks.html#sec:projects_and_tasks).
+
+### Gradle Tasks
+
+So what is a Gradle Task, and why are they so flexible? The Task Panel in Android Studio allows us to observe some of the available tasks, and there are a lot:
 
 ![Gradle Tasks Panel in Android Studio](/img/pingmachine/gradle_panel_tasks.PNG)
 
-### Tasks
+Tasks such as `build` obviously compile our source code. The `clean` task will clear our build cache. But what about something like `connectedCheck`, which runs tests on a connected device?
 
-All of these actions correspond to [Gradle tasks](https://docs.gradle.org/4.4.1/userguide/tutorial_using_tasks.html#sec:projects_and_tasks). For example, building a simple module via Android Studio would ultimately invoke the `./gradlew build` task. If we want to run tests on our device, we could run the `connectedCheck` task, whose task dependency chain would compile all our Kotlin/Java code, package it into an APK, and run our tests via [adb](https://developer.android.com/studio/command-line/adb.html).
+Let's think about the prerequisites. Before running instrumented tests on our device, we first need to build our source code, package an APK, and install it via [adb](https://developer.android.com/studio/command-line/adb.html). Rather than redefine all this functionality, the `connectedCheck` task could instead declare a dependency on the build, package, and install tasks, and then run whatever custom logic is needed.
 
-If you're confused about how this translates into a very flexible API, we're missing two pieces of very crucial information. One, Gradle allows you to lookup any task in the project using your build scripts. Two, it's possible to add our own custom tasks, and make them execute before or after certain tasks.
+There are multiple ways to [add dependencies to tasks](https://docs.gradle.org/4.4.1/userguide/more_about_tasks.html), such as `doLast`, which will execute as the last part of a task. It's also possible to add dependencies and order task execution, through the use of `dependsOn` and `mustRunAfter`.
 
-[Add dependencies to tasks](https://docs.gradle.org/4.4.1/userguide/more_about_tasks.html)
+If you're confused about how this translates into a very flexible API, we're missing two pieces of very crucial information. One, Gradle allows you to lookup any existing task in the project. Two, it's possible to add our own custom tasks to a project, and make them execute before or after existing tasks by [adding task dependencies](https://docs.gradle.org/4.4.1/userguide/more_about_tasks.html#sec:adding_dependencies_to_tasks).
 
-This is an incredibly powerful concept that lets us achieve things that would otherwise appear magical.
+This is an incredibly powerful concept that allows us to achieve things that would otherwise appear magical.
 
-https://developer.android.com/studio/build/index.html
-
-### What is a Gradle Plugin?
+### Gradle Plugins
 
 Surprise, you've been using a [Gradle Plugin](https://developer.android.com/studio/releases/gradle-plugin.html) in your project whether you knew it or not, in the form of the Android Gradle Plugin! Gradle isn't an Android Specific build tool, so the AGP adds Android-specific build tasks, such as Lint Checks, to each module that has `apply plugin 'com.android.application'` in its `build.gradle`.
 
-A plugin is essentially just an easy way of modularising our custom tasks and sharing them with other developers. So let's write our own!
+A plugin is essentially just an easy way of modularising custom tasks and sharing them with other developers. So let's write our own!
 
 ## Writing our own plugin
-We'll start off by packaging our plugin in the `buildSrc` folder, although it would be possible to use a [standalone project](https://docs.gradle.org/4.4.1/userguide/custom_plugins.html#sec:packaging_a_plugin).
 
-### Setting up the buildSrc folder
-
-We'll start by creating a default Android project in Android Studio, and adding a folder at `<projectDir>/buildSrc/src/main/groovy`. This does mean that we can't use it outside the current project, so there will be some additional work when we publish the plugin to an external repository.
+We'll start by creating a default Android project in Android Studio, and adding a folder at `<projectDir>/buildSrc/src/main/groovy`. This does mean that we can't use the plugin outside the current project, so there will be some additional work when we publish to an external repository.
 
 Once the folder has been created, we'll create `PingPlugin.groovy` and add the following contents:
 
@@ -58,19 +57,19 @@ class PingPlugin implements Plugin<Project> {
 }
 ```
 
-Finally, we'll add `apply plugin: PingPlugin` at the top of our app module's `build.gradle`, then run `./gradlew assemble`. The `apply` method will be invoked with an instance of the `Project` whenever we run a build, so in this case the Gradle Console output should contain "I'm a plugin".
+Finally, we'll add `apply plugin: PingPlugin` at the top of our app module's `build.gradle`, then run `./gradlew assemble`. The `apply` method will be invoked with an instance of `Project` whenever we run a build, so the Gradle Console output should contain `"I'm a plugin"`.
 
-### Adding a custom task
+### Adding a custom Gradle task
 
-It's time to add some crazy Gradle magic by adding a custom task. We'll start off by accessing all the existing tasks in the project, via `project.tasks`.
+Our plugin is currently quite useless, so let's add some crazy Gradle magic by writing a custom task. We'll start off by accessing all the existing tasks in the project, via `project.tasks`.
 
-Next, we need to find the task that we're interested in, which in our case is `assemble`. If we weren't sure which task to use, we could run `./gradlew tasks`, which lists all tasks in the project, or consult the [AGP docs](https://google.github.io/android-gradle-dsl/current/). Let's lookup the assemble task using the following method:
+Next, we need to lookup the task that we're interested in, which in our case is `assemble`. If we weren't sure which task to use, we could run `./gradlew tasks`, which lists all tasks in the project, or consult the [AGP docs](https://google.github.io/android-gradle-dsl/current/).
 
 ```
 Task assembleTask = project.tasks.findByName("assemble")
 ```
 
-Finally, let's create our own task, and make it execute once the rest of the `assemble` task has completed:
+Finally, let's create our own task with a closure, and make it execute once the rest of the `assemble` task has completed by specifying `doLast`:
 
 ```
 assembleTask.doLast {
@@ -94,7 +93,7 @@ class PingPlugin implements Plugin<Project> {
 }
 ```
 
-And produce the following output on a successful build of our Android App:
+And will produce the following output on a successful build of our Android App:
 
 ```
 :app:assemble
@@ -103,7 +102,7 @@ I'm a plugin!
 
 ### Make it ping
 
-Our next step is to make the application play a sound, rather than log a message. To do this, we'll download a suitable [PING](https://freesound.org/people/thomasevd/sounds/125374/) sound that is under the CC Attribution License, and add it to our resources folder, at `buildSrc/src/main/resources/audio.wav`.
+Our next step is to make the application play a sound, rather than log a message. To do this, we'll download a suitable [PING](https://freesound.org/people/thomasevd/sounds/125374/) audio clip that is under the CC Attribution License, and add it to our resources folder, at `buildSrc/src/main/resources/audio.wav`.
 
 We can access this resource via the [`ClassLoader`](https://docs.oracle.com/javase/7/docs/api/java/lang/ClassLoader.html), and obtain an `InputStream`. Let's replace the code in our `doLast` task:
 
@@ -159,7 +158,7 @@ class AudioPlayer implements LineListener {
 
 If we assemble the app now, we should hear a ping at the end of the build!
 
-### Build Variants
+### Android Build Variants
 
 With great power comes great responsibility. You may have noticed that this doesn't work when running the app in debug mode from Android Studio, because this action doesn't execute the `assemble` task.
 
@@ -167,7 +166,7 @@ The reason for this is that Gradle has [3 build phases](https://docs.gradle.org/
 
 The Android Gradle Plugin adds its own tasks before the execution phase, most notably the `assembleDebug` and `assembleRelease` tasks.
 
-To fix our oversight, we can ask Gradle to iterate through all the build variants in our project after these tasks have been added. For each variant, we can gain access to the assemble task for each output, and add on our own task to play the audio clip.
+To fix our oversight, we can ask Gradle to iterate through all the build variants in our project after these tasks have been added. For each variant, we can find the assemble task for each output, and add a dependency on an audio playback task.
 
 ```
 class PingPlugin implements Plugin<Project> {
@@ -196,11 +195,11 @@ class PingPlugin implements Plugin<Project> {
 
 A minor bug with this naïve approach is that the ping will occur every time a variant is assembled when we're building multiple outputs. As with all bugs, this could be considered a feature if you use APK splits, product flavors, and intensely dislike all your coworkers.
 
- We can fix that at a later time - for now let's expose an extension that allows developers to control the behaviour of our plugin.
+We can fix this at a later time - for now let's expose an extension that allows developers to control the behaviour of our plugin.
 
-### Plugin Extensions
+### Gradle Plugin Extensions
 
-You're already [familiar with extensions](https://google.github.io/android-gradle-dsl/current/com.android.build.gradle.AppExtension.html), whether you know it or not. For example, most of us have set the `versionName` for our app before:
+You're already [familiar with extension objects](https://docs.gradle.org/current/userguide/custom_plugins.html#sec:getting_input_from_the_build), whether you know it [or not](https://google.github.io/android-gradle-dsl/current/com.android.build.gradle.AppExtension.html). For example, most of us have set the `versionName` for our app before:
 
 ```
 android {
@@ -210,9 +209,9 @@ android {
 }
 ```
 
-The `android` extension is supplied as part of the AGP, and allows us to specify various build parameters without needing to hack on Gradle tasks ourselves.
+The `android` extension is supplied as part of the AGP, and allows us to specify various build parameters without needing to hack on internal Gradle tasks.
 
-#### Example
+### Creating a Gradle Plugin Extension
 
 Creating our own extension should be [very straightforward](https://docs.gradle.org/current/userguide/custom_plugins.html#sec:getting_input_from_the_build
 ). Let's start by downloading an extra audio file, name it `"foo.wav"`, and place it in the resources folder.
@@ -239,7 +238,7 @@ InputStream is = getClass().classLoader.getResourceAsStream(project.pingPlugin.a
 
 ```
 
-And finally, we could configure the plugin from our app's build script:
+And finally, we can configure the plugin from our app's build script:
 
 ```
 pingPlugin {
@@ -249,19 +248,16 @@ pingPlugin {
 
 For now, we'll skip adding an extension, and focus on publishing our plugin as a JAR, so that anybody else in the world can use it in their project.
 
-### Publishing the final product
+## Publishing a Gradle Plugin
 
-#### Standalone Project
+### Standalone Project
 
-We've outgrown the `buildSrc` folder. It's time to create a [standalone Android Studio project](
+We've outgrown the `buildSrc` folder. It's time to create a [standalone project](
 https://docs.gradle.org/current/userguide/custom_plugins.html#sec:custom_plugins_standalone_project) for the plugin.
 
-We'll start by deleting all the auto-generated Android code and app module, which we won't be needing. We will then copy our `src/main` directory across to the root of the new project.
+We'll start by creating an empty Android Studio project, and deleting all the auto-generated Android code and app module, which we won't be needing. We will then copy our `src/main` directory across to the project root.
 
-
-
-
-A couple of additional steps are required in order to build a standalone project. First, we need to add a few dependencies that were previously implicit:
+A couple of additional steps are required. Firstly, we need to add a few dependencies that were previously implicit:
 
 ```
 plugins {
@@ -275,16 +271,15 @@ dependencies {
 }
 ```
 
-Secondly, we need to tell Gradle where the plugin has been implemented. This is achieved by adding a properties file that contains the canonical class name. For our project, we would need to create a file called `META-INF/gradle-plugins/com.fractalwrench.pingmachine.properties`, and point at the following class:
+Secondly, we need to tell Gradle where the plugin is. This is achieved by adding a properties file to the META-INF directory. For our project, we would need to create a file called `META-INF/gradle-plugins/com.fractalwrench.pingmachine.properties`, with the following contents:
 
 ```
 implementation-class=com.fractalwrench.pingmachine.PingPlugin
 ```
 
+### Publishing to the Gradle Plugin Portal
 
-#### Automated publishing
-
-We're going to publish to the Gradle Plugin Portal, so will need to sign up for an account, and setup an API key as [detailed here](https://plugins.gradle.org/docs/submit). Fortunately a [publishing plugin](https://plugins.gradle.org/docs/publish-plugin) is available which automates the entire process into one task.
+We're going to publish to the Gradle Plugin Portal, so will need to sign up for an account, and setup an API key as [detailed here](https://plugins.gradle.org/docs/submit). Fortunately a [publishing plugin](https://plugins.gradle.org/docs/publish-plugin) is available which automates the upload process into one Gradle task.
 
 We can apply the plugin by adding the Plugin Portal's maven repository:
 
@@ -302,7 +297,7 @@ buildscript {
 apply plugin: "com.gradle.plugin-publish"
 ```
 
-And then we can configure the plugin with our project information through its extension:
+And then configure our project information through its extension:
 
 ```
 pluginBundle {
@@ -327,7 +322,7 @@ tasks.withType(Javadoc).all { enabled = false }
 We'll make our final checks, then publish by running the `./gradlew publishPlugins` task.
 
 ### Try it in a fresh Android Project
-Congratulations, we've just published a gradle plugin! Now we need to apply it to our Android project:
+Congratulations, we've just published a gradle plugin! Now we can apply it to any Android project, and hear a ping whenever we build:
 
 ```
 buildscript {
@@ -344,7 +339,7 @@ buildscript {
 apply plugin: "com.fractalwrench.pingmachine"
 ```
 
-Whenever we build our project, we should hear a ping. You can view the [source on Github ](https://github.com/fractalwrench/the-machine-that-goes-ping) for a full example.
+You can view the complete source for this project on [Github](https://github.com/fractalwrench/the-machine-that-goes-ping).
 
 ### Thank You
-I hope you've enjoyed learning about creating custom Gradle Plugins, and have upgraded your workstation to a machine that goes _PING_. If you have any questions, feedback, or would like to suggest a topic for me to write about, please [get in touch via Twitter](https://twitter.com/fractalwrench)!
+I hope you've enjoyed learning about creating custom Gradle Plugins, and have upgraded your workstation to a machine that goes PING. If you have any questions, feedback, or would like to suggest a topic for me to write about, please [get in touch via Twitter](https://twitter.com/fractalwrench)! If you'd like to receive notifications about new blog posts, please subscribe to our mailing list!
