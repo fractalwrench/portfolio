@@ -1,7 +1,7 @@
 ---
 title: "Playing APK Golf"
 subtitle: "Reducing an Android APK's size by 99.99%"
-date: 2017-09-09T17:00:00+01:00
+date: 2017-09-09T00:00:00+00:00
 ---
 
 In golf, the smallest score wins.

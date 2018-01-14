@@ -3,8 +3,13 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
+    <loc>https://fractalwrench.co.uk/posts/the-machine-that-goes-ping/</loc>
+    <lastmod>2018-01-14T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
     <loc>https://fractalwrench.co.uk/posts/playing-apk-golf-how-low-can-an-android-app-go/</loc>
-    <lastmod>2017-09-09T17:00:00+01:00</lastmod>
+    <lastmod>2017-09-09T00:00:00+00:00</lastmod>
   </url>
   
   <url>
@@ -14,7 +19,7 @@
   
   <url>
     <loc>https://fractalwrench.co.uk/posts/hello-hugo/</loc>
-    <lastmod>2017-09-03T16:07:19+01:00</lastmod>
+    <lastmod>2017-09-03T00:00:00+00:00</lastmod>
   </url>
   
   <url>
@@ -24,7 +29,7 @@
   
   <url>
     <loc>https://fractalwrench.co.uk/posts/</loc>
-    <lastmod>2017-09-09T17:00:00+01:00</lastmod>
+    <lastmod>2018-01-14T00:00:00+00:00</lastmod>
     <priority>0</priority>
   </url>
   

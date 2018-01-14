@@ -1,7 +1,7 @@
 ---
 title: "Hello World, Hello Android!"
 subtitle: "Migrating my Android portfolio to Hugo"
-date: 2017-09-03T16:07:19+01:00
+date: 2017-09-03T00:00:00+00:00
 ---
 Hello World, Hello Hugo, and Hello Android!
 

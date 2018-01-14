@@ -1,7 +1,7 @@
 ---
 title: "The machine that goes PING"
 subtitle: "Developing a Gradle Plugin that detects build completion"
-date: 2018-01-13T00:00:00+01:00
+date: 2018-01-14T00:00:00+00:00
 ---
 
 [Gradle](https://gradle.org/) is an 800lb magical gorilla that can be incredibly intimidating at first glance.
@@ -25,6 +25,8 @@ So what is a Gradle Task, and why are they so flexible? The Task Panel in Androi
 ![Gradle Tasks Panel in Android Studio](/img/pingmachine/gradle_panel_tasks.PNG)
 
 Tasks such as `build` obviously compile our source code. The `clean` task will clear our build cache. But what about something like `connectedCheck`, which runs tests on a connected device?
+
+#### Task Dependencies
 
 Let's think about the prerequisites. Before running instrumented tests on our device, we first need to build our source code, package an APK, and install it via [adb](https://developer.android.com/studio/command-line/adb.html). Rather than redefine all this functionality, the `connectedCheck` task could instead declare a dependency on the build, package, and install tasks, and then run whatever custom logic is needed.
 
@@ -160,7 +162,7 @@ If we assemble the app now, we should hear a ping at the end of the build!
 
 ### Android Build Variants
 
-With great power comes great responsibility. You may have noticed that this doesn't work when running the app in debug mode from Android Studio, because this action doesn't execute the `assemble` task.
+With great power comes great responsibility, and great potential for snafus. You may have noticed that this doesn't work when running the app in debug mode from Android Studio, because this action doesn't execute the `assemble` task.
 
 The reason for this is that Gradle has [3 build phases](https://docs.gradle.org/current/userguide/build_lifecycle.html#sec:build_phases): initialisation, configuration, and execution.
 
@@ -342,4 +344,6 @@ apply plugin: "com.fractalwrench.pingmachine"
 You can view the complete source for this project on [Github](https://github.com/fractalwrench/the-machine-that-goes-ping).
 
 ### Thank You
-I hope you've enjoyed learning about creating custom Gradle Plugins, and have upgraded your workstation to a machine that goes PING. If you have any questions, feedback, or would like to suggest a topic for me to write about, please [get in touch via Twitter](https://twitter.com/fractalwrench)! If you'd like to receive notifications about new blog posts, please subscribe to our mailing list!
+I hope you've enjoyed learning about creating custom Gradle Plugins, and have upgraded your workstation to a machine that goes PING. If you have any questions, feedback, or would like to suggest a topic for me to write about, please [get in touch via Twitter](https://twitter.com/fractalwrench)!
+
+If you'd like to receive notifications about new blog posts, please subscribe to our mailing list!
