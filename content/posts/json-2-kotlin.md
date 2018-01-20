@@ -117,11 +117,11 @@ Invalid data should result in an empty `OutputStream`. Our application can detec
 
 #### Name-Value Pairs
 
-- Name-Value Pairs should map onto one of the following primitives (String, Int, Double, Bool, Any?) as an intermediate type
+- Name-Value Pairs should map onto one of the following primitives (String, Int, Number, Bool, Any?) as an intermediate type
 - If a value equals `null`, it should be given an intermediate type (more on that later) of `Any?` as we don't have enough information to discern the type.
 
 #### Arrays
-- Arrays should map onto the following types: (String, Int, Double, Bool, Any?)
+- Arrays should map onto the following types: (String, Int, Number, Bool, Any?)
 - Arrays should use the correct type for nested Arrays of the same object (Array<T>)
 - Arrays should use the correct type for nested Objects of the same type (Array<T>)
 - Arrays should use `Any` if a nested array has different non-null objects
