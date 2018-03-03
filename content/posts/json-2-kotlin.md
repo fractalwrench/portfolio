@@ -238,43 +238,128 @@ internal typealias GroupingStrategy = (lhs: TypedJsonElement, rhs: TypedJsonElem
 internal class JsonFieldGrouper(private val groupingStrategy: GroupingStrategy = ::defaultGroupingStrategy)
 ```
 
-
-
-
-
-
 ### Convert tree level
 
-- We now know all the Types of each Json Element, so can generate Kotlin source.
-- We will do this using KotlinPoet
-- Delegate will be called whenever creating a property/class
-- BuildClass will memoize the constructed types
-- Add TypeSpec to stack for ordering purposes
-- Write results to OutputStream
+Now that we know which objects share the same type, we can generate the type information using KotlinPoet. We'll start by creating a `TypeSpec` for our class:
+
+```
+private fun buildClass(commonElements: List<TypedJsonElement>, fields: Collection<String>): TypeSpec.Builder {
+    val identifier = commonElements.last().kotlinIdentifier
+    val classBuilder = TypeSpec.classBuilder(identifier.capitalize())
+    val constructor = FunSpec.constructorBuilder()
+
+    if (fields.isNotEmpty()) {
+        val fieldTypeMap
+                = typeReducer.findDistinctTypes(fields, commonElements, jsonElementMap)
+        fields.forEach {
+            buildProperty(it, fieldTypeMap, commonElements, classBuilder, constructor)
+        }
+        classBuilder.addModifiers(KModifier.DATA) // non-empty classes allow data modifier
+        classBuilder.primaryConstructor(constructor.build())
+    }
+
+    delegate.prepareClass(classBuilder, commonElements.last())
+    return classBuilder
+}
+```
+
+There are a couple of things to note here. First is that we call to a delegate after the class is prepared, as this will allow us to modify the generated source code as needed. In the default case, this will add GSON annotations.
+
+The other main thing to notice is the KotlinPoet builder, which record the required information. For each JSON field, we want to add a property to the `classBuilder` instance, so will build a property:
 
 
-Conversion:
-- Support GSON because that's what I use, but make it extensible for others to add to if they wish
 
+```
+private fun buildProperty(fieldKey: String,
+                          fieldTypeMap: Map<String, TypeName>,
+                          commonElements: List<TypedJsonElement>,
+                          classBuilder: TypeSpec.Builder,
+                          constructor: FunSpec.Builder) {
 
+    val kotlinIdentifier = fieldKey.toKotlinIdentifier()
+    val typeName = fieldTypeMap[fieldKey]
+    val initializer =
+            PropertySpec.builder(kotlinIdentifier, typeName!!).initializer(kotlinIdentifier)
+    delegate.prepareProperty(initializer, kotlinIdentifier, fieldKey, commonElements)
+    classBuilder.addProperty(initializer.build())
+    constructor.addParameter(kotlinIdentifier, typeName)
+  }
+```
 
+The typename is simply the type of the property as determined at an earlier stage, whether it be `String`, `Any?`, or `Foo`.
 
+After a `TypeSpec` for a class is constructed, it will be added to a map for each JSON object on this level, which effectively memoises the type for later lookups.
 
+Our type will also be added to a Stack, where it will eventually be written to an `OutputStream` as a generated source file, and save us from the tedium of having to convert JSON to Kotlin by hand.
 
-## Command Line
+## Command Line Binding
 
-So we've implemented everything exactly according to plan, 100% bug free, and now it's time to write some wrappers around our API. We'll add separate modules for both a command line tool, and a Spring Boot application.
+### Development
+Several weeks later, and we've implemented everything exactly according to plan, 100% bug free and perfectly documented (haha). So now it's time to write some wrappers around our API. We'll add separate modules for both a command line tool, and a Spring Boot application.
 
-Add a dependency on the core project, and the Apache Commons CLI, which does all the hard work of parsing command line args: https://commons.apache.org/cli/usage.html
+For our command line app, we'll add a dependency on the core project and the [Apache Commons CLI](https://commons.apache.org/cli/usage.html), which does all the hard work of parsing arguments:
 
 ```
 implementation project(":core")
 implementation "commons-cli:commons-cli:1.4"
 ```
 
-Configure JAR generation to run correctly:
+The hardest part is deciding what options to expose, as this will be part of our public API. Less is more, so let's support the following options for now:
 
 ```
+private fun prepareOptions(): Options {
+    return with(Options()) {
+        addOption(Option.builder("input")
+                .desc("The JSON file input")
+                .numberOfArgs(1)
+                .build())
+        addOption(Option.builder("packageName")
+                .desc("The package name for the generated Kotlin file")
+                .numberOfArgs(1)
+                .build())
+        addOption(Option.builder("help")
+                .desc("Displays help on available commands")
+                .build())
+    }
+}
+```
+
+We will then parse the arguments from our main methods, and execute the correct branch accordingly. If the arguments were invalid or not present, then we'll print a message to indicate that this was the case:
+
+```
+try {
+    val cmd = parser.parse(prepareOptions(), args)
+
+    if (cmd.hasOption("help") || !cmd.hasOption("input")) {
+        printHelp(options)
+    } else {
+        val parsedOptionValue = cmd.getParsedOptionValue("input") as String
+        val inputFile = Paths.get(parsedOptionValue).toFile()
+
+        if (inputFile.exists()) {
+            val outputFile = findOutputFile(inputFile)
+            Kotlin2JsonConverter().convert(inputFile.inputStream(), outputFile.outputStream(), ConversionArgs())
+            println("Generated source available at '$outputFile'")
+        } else {
+            println("Failed to find file '$inputFile'")
+        }
+    }
+} catch (e: ParseException) {
+  println("Failed to parse arguments: ${e.message}")
+}
+```
+
+<!-- TODO test out and add screenshot? -->
+
+### Distribution
+
+The advantage of a JVM language is that it should run pretty much anywhere in a JAR.
+
+Gradle has a few additional tasks which simplify the generation process. We'll start by modifying our build file to contain the following information which is used to generate a valid JAR:
+
+```
+apply plugin: 'application'
+
 mainClassName = "com.fractalwrench.json2kotlin.AppKt"
 
 jar {
@@ -292,19 +377,22 @@ distributions {
 }
 ```
 
-Build steps:
+We will then run the following steps to build and distribute our application:
 
 1. Run assemble: `./gradlew assemble`
 2. Extract dist at `cmdline/build/distributions/json2kotlin.zip`
 3. Execute file: `./json2kotlin/bin/cmdline`
 
-### Testing it out
+Onto Spring Boot.
 
-We should be able to convert a JSON file to a Kotlin file automagically. Let's test it out.
 
-<!-- TODO test -->
 
-## Spring Boot
+
+
+
+
+
+## Spring Boot Binding
 
 [Spring Boot](https://projects.spring.io/spring-boot/) is a Java Framework that can be used to create web applications, and has recently been adding a lot of Kotlin support. Developing a web application will be a little more involved, because we'll be hosting it on the internet, and it's a well-known fact that everyone on the internet is a horrible human being who wants to break everything.
 
