@@ -385,88 +385,140 @@ We will then run the following steps to build and distribute our application:
 
 Onto Spring Boot.
 
-
-
-
-
-
-
-
 ## Spring Boot Binding
 
-[Spring Boot](https://projects.spring.io/spring-boot/) is a Java Framework that can be used to create web applications, and has recently been adding a lot of Kotlin support. Developing a web application will be a little more involved, because we'll be hosting it on the internet, and it's a well-known fact that everyone on the internet is a horrible human being who wants to break everything.
+[Spring Boot](https://projects.spring.io/spring-boot/) is a Java Framework that can be used to create web applications, and has recently been adding a lot of Kotlin support. Developing a web application will be a little more involved, because we'll be hosting it on the internet, and it's a well-known fact that everyone on the internet is a horrible human being who wants to break everything. We also have to consider concurrent usage, and how to prevent & reject invalid payload submissions.
 
-Dev things:
-
-- Max limit for payload size
-- Concurrent use by multiple users
-- Reject invalid JSON on frontend + backend
-- Rate-limit requests to stop Denial of Service
-- Make a pretty page
-- Download generated source
-- Cross-browser compatibility
-- SEO
-- Big shiny paypal button for everyone to ignore
-
-Ops things:
-
-- Register domain and generate SSL certificate
-- Host web application on internet
-- Attempt to scale in the event of heavy traffic (hi HN!)
-- Monitoring downtime/warnings
-
-I'm sure glad that my day-job isn't as a web developer.
-
-
-### Development
-
-
-#### Basic Boilerplate
-
-1. Create a template REST API application if not familiar already https://spring.io/guides/gs/rest-service/
-<!-- TODo -->
+### Handling GET requests
+We'll start off by creating an empty Spring Boot Web project by following Pivotal's very [handy guide](https://spring.io/guides/gs/rest-service/). After setting up the boilerplate, we'll create a class annotated with `Controller`, and setup a `RequestMapping` to the root of our project, like so:
 
 ```
 @Controller
 class ConversionController {
 
     @GetMapping("/")
-    fun displayConversionForm(): String {
+    fun displayConversionForm(model: Model): String {
+        model.addAttribute("conversionForm", ConversionForm())
+        model.addAttribute("kotlin", "class Example")
         return "conversion"
     }
 ```
 
-2. Add a HTML file named "conversion" under `src/main/resources/static/templates`, Spring will automagically detect the template and serve it when the endpoint is requested.
+There's a lot of magic going on here. Behind the scenes, Spring will route HTTP requests to the specified path to our `displayConversionForm` method. This methods adds our Kotlin source as an attribute to a `Model`, then returns a view, which corresponds to a HTML template stored under `src/main/resources/static/templates`:
 
-3. Add any static resources (CSS, images, etc) under the same directory
+```
+<html>
+  <head></head>
+  <body>
+    <textarea th:text="${kotlin}"></textarea>
+  </body>
+</html>
+```
 
-4. View results in web browser
+The template is processed by [Thymeleaf](https://www.thymeleaf.org/), and any [expressions](https://docs.spring.io/spring/docs/4.3.12.RELEASE/spring-framework-reference/html/expressions.html) in the `th` namespace are resolved to HTML. This is then returned to the user, and rendered in the browser, as something like the following:
 
-#### Converting JSON
+```
+<html>
+  <head></head>
+  <body>
+    <textarea text="class Example"></textarea>
+  </body>
+</html>
+```
 
-We're already depending on the Core project, so it should be the case of accepting a post request that contains a few parameters and a valid JSON payload. To do that we'll need a new endpoint. We can then convert the payload using our regular JSON converter, then return the Kotlin source as the output. In addition, we'll need to rate-limit, reject invalid input, etc.
+### Handling POST requests
 
+We're getting slightly ahead of ourselves here, as we can't display the generated Kotlin to the user until they submit their JSON input. We'll be achieving this by displaying a form to the user, which makes a POST request containing the JSON input to our endpoint:
 
-<!-- TODO -->
+```
+<form id="jsonForm" action="#" th:action="@{/}" th:object="${conversionForm}"
+              method="post" onsubmit="return validateForm()">
+  <textarea maxlength="10000" placeholder="Paste JSON here..." th:field="*{json}"></textarea>
+  <p><input type="reset" value="Reset"/> <input type="submit" value="Convert"/></p>
+</form>
+```
 
+You may have noticed that the form object is bound to the `conversionForm` we added in our previous method, which contains a `json` field. We'll accept and convert this in our Controller:
+
+```
+@PostMapping("/")
+fun convertToKotlin(model: Model, @ModelAttribute conversionForm: ConversionForm): String {
+    val os = ByteArrayOutputStream()
+    Kotlin2JsonConverter().convert(inputStream, os, ConversionArgs())
+    model.addAttribute("kotlin", String(os.first.toByteArray()))
+    return displayConversionForm(model)
+}
+```
+
+### Making a purty website
+We'll skip a few steps here that include adding front-end validation, download/copy options, and slaying CSS dragons.
+
+If you're interested more in how the web functionality works, I'd encourage you to browse through the [Spring module](https://github.com/fractalwrench/json-2-kotlin/tree/master/spring/src/main) of the project. Please excuse my stone-age JavaScript - we appear to have reached a technological singularity and I simply can't keep up with the rate at which new JavaScript frameworks are being released.
+
+## AWS
 
 ### Deployment
 
-We're going to deploy using AWS, which has a free tier that should satisfy the needs of most hobby projects: https://aws.amazon.com/free/
+We're going to deploy using AWS, which has a [free tier](https://aws.amazon.com/free/) that should satisfy the needs of most hobby projects. Some level of familiarity with AWS is assumed from here on out, but here's a quick refresher of the services we'll be using:
 
-Quick refresher:
+[Elastic Beanstalk](https://aws.amazon.com/elasticbeanstalk/): Controls all the AWS services required to build a scalable application. EC2 instances will scale in response to incoming traffic
+[EC2](https://aws.amazon.com/ec2/): Elastic Cloud Compute, basically a instance that hosts our JAR application in the cloud. Has a JVM environment already setup
+[Elastic Load Balancer](https://aws.amazon.com/elasticloadbalancing/): Divides traffic between the available EC2 instances depending on how busy they are.
+[Route 53](https://aws.amazon.com/route53/): allows us to register a domain name, and configure the DNS to point towards an Elastic Beanstalk application
 
-Elastic Beanstalk: Controls all the AWS services required to build a scalable application. EC2 instances will scale in response to incoming traffic
-EC2: Elastic Cloud Compute, basically a instance that hosts our JAR application in the cloud. Has a JVM environment already setup
-Elastic Load Balancer: Divides traffic between the available EC2 instances depending on how busy they are.
-Route 53: allows us to register a domain name, and configure the DNS to point towards an Elastic Beanstalk application
-AWS Cert manager: creates a certificate for a domain that we own
+#### Ops things
 
-<!-- TODO -->
+1. Register domain (here's one I bought earlier) https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/registrar.html
 
+2. Configure a hosted zone for the domain, using an ALIAS record: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-beanstalk-environment.html#routing-to-beanstalk-environment-create-alias-procedure
+
+3. Wait 24h for DNS to propagate (usually a lot faster)
+
+### Deployable JAR
+
+Deploying a Kotlin Spring Boot JAR can be achieved broadly by following this [very helpful blog](https://aws.amazon.com/blogs/devops/deploying-a-spring-boot-application-on-aws-using-aws-elastic-beanstalk/) from AWS. Unfortunately a few of the steps don't seem to work with the default configuration, so we'll also have to take some additional steps.
+
+#### Main class name
+Let's update our build script to use the correct main class name, so that Java can locate our main method.
+
+```
+jar {
+    baseName = 'json2kotlin'
+    version = '0.1.0'
+    manifest {
+        attributes 'Main-Class': 'AppKt'
+    }
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+}
+```
+
+#### Load balancing
+Our application will use a load balancer which should automatically scale server instances in the face of heavy traffic (Hi HN!). Depending on your anticipated traffic, you could skip this step altogether.
+
+First, we'll set our server port in `application.properties` to the following value:
+
+```
+server.port=8888
+```
+
+Secondly, we'll point the load balancer and update the health check to use this port, by following [these instructions](https://pragmaticintegrator.wordpress.com/2016/08/04/configuring-the-elastic-load-balancer-of-your-elastic-beanstalk-application/).
+
+Most importantly, we'll need to set up a health check, as this allows the load balancer to determine which instances are healthy. We could hit the root of our application but that's quite an expensive check. Instead, we'll [enable Spring Actuator](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-enabling.html) which will enable a simple `/health` endpoint.
+
+### Crash reporting
+There are probably a few bugs lurking in our application, so the next step is to add a solution that monitors any uncaught exceptions that occur in the wild. I chose [Bugsnag](https://www.bugsnag.com/) for this task, because:
+
+- It supports both Kotlin and JavaScript, as well as [most languages under the sun](https://www.bugsnag.com/platforms/)
+- It's free for open-source/community plans
+- I suck at JavaScript and am anticipating a _lot_ of errors
+
+As a full disclaimer, I work for Bugsnag, so you can blame me if anything goes wrong.
 
 ### Try it today
-You can view the complete source for this project on [Github](https://github.com/fractalwrench/json-2-kotlin).
+
+Finally, we'll run `bootRepackage` to generate a JAR of our application, and deploy it.
+
+We should be greeted by a beautiful application, which you can find [here](http://json2kotlin.co.uk/). You can also view the complete source for this project on [Github](https://github.com/fractalwrench/json-2-kotlin).
 
 ### Thank You
 I hope you've enjoyed learning about Kotlin source generation, and will sleep easy at night in the knowledge that you never have to write data classes by hand again. If you have any questions, feedback, or would like to suggest a topic for me to write about, please [get in touch via Twitter](https://twitter.com/fractalwrench)!
