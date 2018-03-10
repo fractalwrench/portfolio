@@ -1,12 +1,14 @@
 ---
 title: "Converting JSON to Kotlin"
-subtitle: "Automatically generating Kotlin data classes using Square's Kotlin Poet"
+subtitle: "Generating Kotlin data classes using Square's KotlinPoet"
 date: 2018-01-31T00:00:00+00:00
 ---
 
 Have you ever got bored writing Kotlin classes which serialise a JSON payload?
 
-Me too. Fortunately, we're going to write a Kotlin app that [automates the whole process](https://imgs.xkcd.com/comics/the_general_problem.png), using Square's awesome [KotlinPoet](https://github.com/square/kotlinpoet) library.
+Me too. Fortunately, we're going to write a Kotlin tool that [automates the whole process](https://imgs.xkcd.com/comics/the_general_problem.png), using Square's awesome [KotlinPoet](https://github.com/square/kotlinpoet) library.
+
+We're also going to take a greenfield Kotlin project all the way to production, by deploying a Spring Boot app on AWS, and creating a command line tool for local use.
 
 ## Why build a new library?
 There are a couple of existing options for converting JSON to Kotlin, such as [jsonschema2pojo](http://www.jsonschema2pojo.org/) and [JsonToKotlinClass](https://github.com/wuseal/JsonToKotlinClass), but none of them fit my usecase of being able to generate Kotlin from a browser in one click.
@@ -25,7 +27,7 @@ The end result is Json2Kotlin, a small library (<1k loc) which has a command lin
 
 Let's jump into how the library was constructed.
 
-## Building a Kotlin Library
+## Creating the core Kotlin Library
 
 We'll start by generating an empty Kotlin project, and add a Core, Command Line, and Spring Boot module. The core module will define a public API of two parts, and hide everything else. Firstly, we'll need a method to initiate conversion:
 
@@ -36,13 +38,14 @@ fun convert(input: InputStream, output: OutputStream, args: ConversionArgs)
 Secondly, we'll also need a simple way of modifying the source generation process, to support the various JSON serialisers available. The delegate pattern is a good fit for this:
 
 ```
-class Kotlin2JsonConverter(private val buildDelegate: SourceBuildDelegate = GsonBuildDelegate()) {
-}
+class Kotlin2JsonConverter(
+    private val buildDelegate: SourceBuildDelegate = GsonBuildDelegate()
+)
 ```
 
 Both the Spring Boot and Command Line modules will depend on the core module, which allows us to dog-food our own API.
 
-## Converting to Kotlin
+## Converting JSON to Kotlin
 
 JSON is [deceptively complex](https://tools.ietf.org/html/rfc8259), particularly when we want to map it onto another type system. Primitive fields like Strings and Booleans are simple enough to convert, but there are a surprising number of edge cases. For example:
 
@@ -57,7 +60,7 @@ Thankfully we're only creating a Minimal Viable Product, so all we need to worry
 
 To start converting JSON to Kotlin, we'll determine our general algorithmic approach to the problem, then write tests and iteratively develop features.
 
-### Algorithmic approach
+### JSON Conversion Algorithms
 
 JSON is a [tree](https://en.wikipedia.org/wiki/Tree_(data_structure), where any of the array or object nodes could potentially have child nodes. We could start at the root node and work our way to the bottom, but this could lead to a scenario where we need to de-duplicate class types. For example, the object field in the following JSON should correspond to the following Kotlin code:
 
@@ -90,7 +93,7 @@ Therefore, our approach will be something like follows:
 
 That sounds hard! Before we get started, we'd better write some tests.
 
-## Parameterised Test Cases
+## Parameterised Test Cases for Source Code generation
 
 There a lot of potential JSON structures, but at the end of the day all we want to  check that given a JSON input, the correct Kotlin output is generated. This makes them a prime candidate for [JUnit parameterised tests](https://github.com/junit-team/junit4/wiki/parameterized-tests).
 
@@ -131,7 +134,7 @@ val inputStream = ResourceFileReader::class.java.classLoader.getResourceAsStream
 
 The [full test](https://github.com/fractalwrench/json-2-kotlin/blob/master/core/src/test/kotlin/com/fractalwrench/json2kotlin/JsonConverterTest.kt) takes this even further, by recursively detecting any JSON/Kotlin files within the resources directory. This means we can just add a pair of JSON and Kotlin files, and we'll automatically have a test case.
 
-### What to test
+### Test case coverage
 
 There are a few obvious things to test, such as handling invalid JSON, and serialising real-world payloads. However, we'll also want to add coverage for some of the following scenarios:
 
@@ -160,9 +163,9 @@ data class StrExample(val strField: String)
 The latest test suite is available [here](https://github.com/fractalwrench/json-2-kotlin/tree/master/core/src/test/resources/valid)
 
 
-## Implementation
+## Implementing the Json2Kotlin converter
 
-### Tree traversal
+### JSON Tree traversal
 
 We'll start by implementing a [breadth-first search](https://en.wikipedia.org/wiki/Breadth-first_search) to add each non-primitive JSON node to a stack.
 
@@ -209,7 +212,7 @@ fun generateTypeSpecs(bfsStack: Stack<TypedJsonElement>): Stack<TypeSpec> {
 }
 ```
 
-### Group common objects
+### Grouping common objects
 Now that we have all the JSON nodes in one level of the tree, we can group any common objects together. We'll use a really simple strategy, where 1/5 or more of the keys must match between two objects for them to have the same type. We'll also make this transitive - i.e., if the object pairs A+B and B+C match, then A+C also match.
 
 ```
@@ -238,8 +241,8 @@ internal typealias GroupingStrategy = (lhs: TypedJsonElement, rhs: TypedJsonElem
 internal class JsonFieldGrouper(private val groupingStrategy: GroupingStrategy = ::defaultGroupingStrategy)
 ```
 
-### Convert tree level
-
+### Converting a JSON tree to Kotlin classes, one level at a time
+<!-- TODO clarify that level is processed one at a time -->
 Now that we know which objects share the same type, we can generate the type information using KotlinPoet. We'll start by creating a `TypeSpec` for our class:
 
 ```
@@ -292,17 +295,24 @@ After a `TypeSpec` for a class is constructed, it will be added to a map for eac
 
 Our type will also be added to a Stack, where it will eventually be written to an `OutputStream` as a generated source file, and save us from the tedium of having to convert JSON to Kotlin by hand.
 
-## Command Line Binding
 
-### Development
+### Testing an example
+
+<!-- TODO a bit abstract, use a complex but understandable example -->
+
+
+## Writing a command Line Kotlin tool
+
 Several weeks later, and we've implemented everything exactly according to plan, 100% bug free and perfectly documented (haha). So now it's time to write some wrappers around our API. We'll add separate modules for both a command line tool, and a Spring Boot application.
 
 For our command line app, we'll add a dependency on the core project and the [Apache Commons CLI](https://commons.apache.org/cli/usage.html), which does all the hard work of parsing arguments:
 
 ```
-implementation project(":core")
-implementation "commons-cli:commons-cli:1.4"
+compile project(":core")
+compile "commons-cli:commons-cli:1.4"
 ```
+
+### Handling command line arguments
 
 The hardest part is deciding what options to expose, as this will be part of our public API. Less is more, so let's support the following options for now:
 
@@ -351,7 +361,7 @@ try {
 
 <!-- TODO test out and add screenshot? -->
 
-### Distribution
+### Distributing a Kotlin command-line tool
 
 The advantage of a JVM language is that it should run pretty much anywhere in a JAR.
 
@@ -385,11 +395,11 @@ We will then run the following steps to build and distribute our application:
 
 Onto Spring Boot.
 
-## Spring Boot Binding
+## Writing a Spring Boot app in Kotlin
 
 [Spring Boot](https://projects.spring.io/spring-boot/) is a Java Framework that can be used to create web applications, and has recently been adding a lot of Kotlin support. Developing a web application will be a little more involved, because we'll be hosting it on the internet, and it's a well-known fact that everyone on the internet is a horrible human being who wants to break everything. We also have to consider concurrent usage, and how to prevent & reject invalid payload submissions.
 
-### Handling GET requests
+### Adding a controller for GET requests
 We'll start off by creating an empty Spring Boot Web project by following Pivotal's very [handy guide](https://spring.io/guides/gs/rest-service/). After setting up the boilerplate, we'll create a class annotated with `Controller`, and setup a `RequestMapping` to the root of our project, like so:
 
 ```
@@ -426,7 +436,7 @@ The template is processed by [Thymeleaf](https://www.thymeleaf.org/), and any [e
 </html>
 ```
 
-### Handling POST requests
+### Adding a POST request mapping
 
 We're getting slightly ahead of ourselves here, as we can't display the generated Kotlin to the user until they submit their JSON input. We'll be achieving this by displaying a form to the user, which makes a POST request containing the JSON input to our endpoint:
 
@@ -450,14 +460,12 @@ fun convertToKotlin(model: Model, @ModelAttribute conversionForm: ConversionForm
 }
 ```
 
-### Making a purty website
+### Building a pretty HTML page
 We'll skip a few steps here that include adding front-end validation, download/copy options, and slaying CSS dragons.
 
 If you're interested more in how the web functionality works, I'd encourage you to browse through the [Spring module](https://github.com/fractalwrench/json-2-kotlin/tree/master/spring/src/main) of the project. Please excuse my stone-age JavaScript - we appear to have reached a technological singularity and I simply can't keep up with the rate at which new JavaScript frameworks are being released.
 
-## AWS
-
-### Deployment
+## Deploying a Kotlin Spring Boot app to AWS Elastic Beanstalk
 
 We're going to deploy using AWS, which has a [free tier](https://aws.amazon.com/free/) that should satisfy the needs of most hobby projects. Some level of familiarity with AWS is assumed from here on out, but here's a quick refresher of the services we'll be using:
 
@@ -466,7 +474,7 @@ We're going to deploy using AWS, which has a [free tier](https://aws.amazon.com/
 [Elastic Load Balancer](https://aws.amazon.com/elasticloadbalancing/): Divides traffic between the available EC2 instances depending on how busy they are.
 [Route 53](https://aws.amazon.com/route53/): allows us to register a domain name, and configure the DNS to point towards an Elastic Beanstalk application
 
-#### Ops things
+### Registering a domain
 
 1. Register domain (here's one I bought earlier) https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/registrar.html
 
@@ -474,11 +482,11 @@ We're going to deploy using AWS, which has a [free tier](https://aws.amazon.com/
 
 3. Wait 24h for DNS to propagate (usually a lot faster)
 
-### Deployable JAR
+### Building a deployable JAR
 
 Deploying a Kotlin Spring Boot JAR can be achieved broadly by following this [very helpful blog](https://aws.amazon.com/blogs/devops/deploying-a-spring-boot-application-on-aws-using-aws-elastic-beanstalk/) from AWS. Unfortunately a few of the steps don't seem to work with the default configuration, so we'll also have to take some additional steps.
 
-#### Main class name
+### Updating JAR metadata
 Let's update our build script to use the correct main class name, so that Java can locate our main method.
 
 ```
@@ -492,7 +500,7 @@ jar {
 }
 ```
 
-#### Load balancing
+### Scaling our application with a load balancer
 Our application will use a load balancer which should automatically scale server instances in the face of heavy traffic (Hi HN!). Depending on your anticipated traffic, you could skip this step altogether.
 
 First, we'll set our server port in `application.properties` to the following value:
@@ -505,7 +513,7 @@ Secondly, we'll point the load balancer and update the health check to use this 
 
 Most importantly, we'll need to set up a health check, as this allows the load balancer to determine which instances are healthy. We could hit the root of our application but that's quite an expensive check. Instead, we'll [enable Spring Actuator](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-enabling.html) which will enable a simple `/health` endpoint.
 
-### Crash reporting
+### Setup crash reporting with Bugsnag
 There are probably a few bugs lurking in our application, so the next step is to add a solution that monitors any uncaught exceptions that occur in the wild. I chose [Bugsnag](https://www.bugsnag.com/) for this task, because:
 
 - It supports both Kotlin and JavaScript, as well as [most languages under the sun](https://www.bugsnag.com/platforms/)
@@ -521,4 +529,6 @@ Finally, we'll run `bootRepackage` to generate a JAR of our application, and dep
 We should be greeted by a beautiful application, which you can find [here](http://json2kotlin.co.uk/). You can also view the complete source for this project on [Github](https://github.com/fractalwrench/json-2-kotlin).
 
 ### Thank You
-I hope you've enjoyed learning about Kotlin source generation, and will sleep easy at night in the knowledge that you never have to write data classes by hand again. If you have any questions, feedback, or would like to suggest a topic for me to write about, please [get in touch via Twitter](https://twitter.com/fractalwrench)!
+I hope you've enjoyed learning about Kotlin source generation, and will sleep easy at night in the knowledge that you never have to write data classes by hand again.
+
+If you have any questions, feedback, or would like to suggest a topic for me to write about, please [get in touch via Twitter](https://twitter.com/fractalwrench)!
