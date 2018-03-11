@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <url>
+    <loc>https://fractalwrench.co.uk/posts/json-2-kotlin/</loc>
+    <lastmod>2018-03-11T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://fractalwrench.co.uk/posts/the-machine-that-goes-ping/</loc>
+    <lastmod>2018-01-14T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://fractalwrench.co.uk/posts/playing-apk-golf-how-low-can-an-android-app-go/</loc>
+    <lastmod>2017-09-09T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://fractalwrench.co.uk/</loc>
+    <lastmod>2017-09-04T19:07:03+01:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://fractalwrench.co.uk/posts/hello-hugo/</loc>
+    <lastmod>2017-08-03T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://fractalwrench.co.uk/categories/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://fractalwrench.co.uk/posts/</loc>
+    <lastmod>2018-03-11T00:00:00+00:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://fractalwrench.co.uk/tags/</loc>
+    <priority>0</priority>
+  </url>
+  
+</urlset>

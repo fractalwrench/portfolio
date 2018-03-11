@@ -1,0 +1,264 @@
+<!DOCTYPE html><html lang="en"><meta charset="utf-8"><meta http-equiv="X-UA-Compatible"content="IE=edge"><meta name="viewport"content="width=device-width,initial-scale=1,maximum-scale=1"><title>Converting JSON to Kotlin</title><meta property="og:title"content="Converting JSON to Kotlin"><meta name="twitter:title"content="Converting JSON to Kotlin"><meta name="description"content="Generating Kotlin data classes using Square&#39;s KotlinPoet"><meta property="og:description"content="Generating Kotlin data classes using Square&#39;s KotlinPoet"><meta name="twitter:description"content="Generating Kotlin data classes using Square&#39;s KotlinPoet"><meta name="author"content="Jamie Lynch"><link href="https://fractalwrench.co.uk/img/favicon.ico"rel="icon"type="image/x-icon"><meta property="og:image"content="https://fractalwrench.co.uk/img/avatar.png"><meta name="twitter:image"content="https://fractalwrench.co.uk/img/avatar.png"><meta name="twitter:card"content="summary"><meta name="twitter:site"content="@fractalwrench"><meta name="twitter:creator"content="@fractalwrench"><meta property="og:url"content="https://fractalwrench.co.uk/posts/json-2-kotlin/"><meta property="og:type"content="website"><meta property="og:site_name"content="Fractalwrench"><meta name="generator"content="Hugo 0.26"><link rel="canonical"href="https://fractalwrench.co.uk/posts/json-2-kotlin/"><link rel="alternate"href="https://fractalwrench.co.uk/index.xml"type="application/rss+xml"title="Fractalwrench"><link rel="stylesheet"href="https://fractalwrench.co.uk/css/main.css"><script>window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+ga('create', 'UA-106232170-1', 'auto');
+ga('send', 'pageview');</script><script async src="//www.google-analytics.com/analytics.js"></script><meta name="google-site-verification"content="U-2QCPenUacHGGiWVPbuZIPmicWQeRYkpfV-xOesJl8"><nav class="navbar-custom"id="navbar-container"><div class="navbar-container"><a class="navbar-title"href="https://fractalwrench.co.uk/">Fractalwrench</a><div id="main-navbar"><ul class="nav navbar-link"><li><a title="Blog"href="/posts">Blog</a></ul></div><div class="avatar-container"><div class="avatar-img-border"><a title="Fractalwrench"href="https://fractalwrench.co.uk/"><img class="avatar-img"src="https://fractalwrench.co.uk/img/avatar.png"alt="Fractalwrench"></a></div></div></div></nav><header class="header-section"><div class="intro-header no-img"><div class="container"><div class="posts-heading"><h1>Converting JSON to Kotlin</h1><h2 class="posts-subheading">Generating Kotlin data classes using Square&#39;s KotlinPoet</h2></div></div></div></header><div class="container"><article role="main"class="blog-post"><p>Have you ever got bored writing Kotlin classes which serialise a JSON payload?<p>Me too. Fortunately, we&rsquo;re going to write a Kotlin library that <a href="https://imgs.xkcd.com/comics/the_general_problem.png">automates the whole process</a>, using Square&rsquo;s awesome <a href="https://github.com/square/kotlinpoet">KotlinPoet</a>.<p>We&rsquo;re also going to create a command-line tool and Spring Boot application, then deploy both to production.<h2 id="creating-the-core-kotlin-library">Creating the core Kotlin Library</h2><p>We&rsquo;ll start by generating an empty Kotlin project with a module named <code>core</code>.<p>This module will contain all the conversion code, so we should define an API that encapsulates most of the gory details. Firstly, we&rsquo;ll need a method that converts a JSON <code>InputStream</code> to an <code>OutputStream</code>:<pre><code>fun convert(input: InputStream, output: OutputStream, args: ConversionArgs)
+</code></pre><p>Several JSON serialisation libraries require annotations like <code>@SerializedName</code>. We&rsquo;ll provide callbacks via a delegate for each time a class or property is added, which will allow us to tack on annotations after the source has been generated:<pre><code>class Kotlin2JsonConverter(
+    private val buildDelegate: SourceBuildDelegate = GsonBuildDelegate()
+)
+</code></pre><p>For the Spring Boot and command-line applications, we&rsquo;ll create separate modules which both depend on the <code>core</code> module. More on that later.<h3 id="json-conversion-algorithms">JSON Conversion Algorithms</h3><p>JSON is a <a href="https://en.wikipedia.org/wiki/Tree_data_structure">tree</a>, where each array and object node could contain child nodes.<p>Our algorithm will start at the bottom of the tree, and work its way up to the top, one level at a time. For each level, we should group similar objects together, and build a Kotlin type representation for each grouping.<h4 id="a-conversion-example">A conversion example</h4><p>That all sounds very abstract. Consider the following JSON:<pre><code>{
+  &quot;obj&quot;: {
+    &quot;foo&quot;: &quot;a string value&quot;
+  },
+  &quot;another&quot;: {
+    &quot;foo&quot;: &quot;another string value&quot;
+  },
+  &quot;primitive&quot;: true
+}
+</code></pre><p>We can clearly see that both objects near the bottom of the tree have a key of <code>foo</code>, and a type of <code>String</code>:<pre><code>{
+  &quot;foo&quot;: &quot;a string value&quot;
+},
+{
+  &quot;foo&quot;: &quot;another string value&quot;
+}
+
+</code></pre><p>Therefore we&rsquo;ll group them together, and represent them with a single Kotlin type:<pre><code>data class Obj(val foo: String)
+</code></pre><p>When we go up a level, we can immediately see that there are two fields of type <code>Obj</code>, and one primitive field of type <code>Boolean</code>:<pre><code>{
+  &quot;obj&quot;: Obj,
+  &quot;another&quot;: Obj,
+  &quot;primitive&quot;: Boolean
+}
+</code></pre><p>And as we&rsquo;ve reached the root node, we&rsquo;ve finished converting our JSON to Kotlin, and can write the results to our <code>OutputStream</code>:<pre><code>data class Example(val obj: Obj, val another: Obj, val primitive: Boolean)
+data class Obj(val foo: String)
+</code></pre><h4 id="json-is-simple-right">JSON is simple, right?</h4><p>Of course, it&rsquo;s not always as easy as our example. JSON is <a href="https://tools.ietf.org/html/rfc8259">deceptively complex</a>, and there are a surprising number of scenarios which we&rsquo;ll need to address. For example, here are just a few to think about:<ul><li>What happens if a field is null or omitted from one of the objects?<li>How should JSON keys be converted into valid Kotlin identifiers?<li>What happens if two objects have matching fields, but use different types?<li>How should objects be grouped, if they share around 50% of the same keys?</ul><p>Sounds hard! We&rsquo;d better write some tests.<h2 id="parameterised-unit-tests-for-source-code-generation">Parameterised Unit Tests for Source Code generation</h2><p>We want to verify that given a JSON input, the correct Kotlin output is generated. As we&rsquo;re going to check many different JSON structures, this is a prime candidate for a <a href="https://github.com/junit-team/junit4/wiki/parameterized-tests">JUnit parameterised test</a>.<p>Here&rsquo;s a simplified version of our test, which parameterises two filenames:<pre><code>@RunWith(Parameterized::class)
+class JsonConverterTest(val expectedFilename: String,
+                        val jsonFilename: String) {
+
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters
+        fun filenamePairs(): Collection&lt;Array&lt;String&gt;&gt; {
+            return listOf(arrayOf(&quot;HelloWorld.kt&quot;, &quot;hello_world.json&quot;))
+        }
+    }
+}
+</code></pre><p>JUnit will run the test once for each parameter pair. Therefore, all we need to do is compare the generated source code against the expected source code, and supply filenames:<pre><code>@Test
+fun testJsonToKotlinConversion() {
+    val outputStream = ByteArrayOutputStream()
+    jsonConverter.convert(json, outputStream, ConversionArgs())
+    val generatedSource = String(outputStream.toByteArray())
+    val expectedContents = fileReader.readContents(expectedFilename)
+    Assert.assertEquals(msg, expectedContents)
+}
+</code></pre><p>And then our test case will verify that a JSON input matches an output similar to this:<pre><code>{&quot;foo&quot;:&quot;Hello World!&quot;} // &quot;Example.json&quot;
+data class Example(val foo: String) &quot;Example.kt&quot;
+</code></pre><p>This assumes that a JSON and Kotlin file are present in <code>src/test/resources</code>, and that the file contents can be read via the <code>ClassLoader</code>:<pre><code>val classLoader = ResourceFileReader::class.java.classLoader
+val inputStream = classLoader.getResourceAsStream(&quot;HelloWorld.kt&quot;)
+</code></pre><p>The <a href="https://github.com/fractalwrench/json-2-kotlin/blob/master/core/src/test/kotlin/com/fractalwrench/json2kotlin/JsonConverterTest.kt">full test</a> takes this even further, by recursively detecting JSON/Kotlin files within the resources directory. This means we can just add a pair of JSON and Kotlin files, and we&rsquo;ll automatically have a test case.<p>The latest test suite is available on the <a href="https://github.com/fractalwrench/json-2-kotlin/tree/master/core/src/test/resources/valid">Github repository</a>.<h2 id="implementing-the-json2kotlin-converter">Implementing the Json2Kotlin converter</h2><p>Before we look at our approach in more detail, let&rsquo;s summarise the steps:<ol><li>Sanitise input and <a href="https://github.com/fractalwrench/json-2-kotlin/blob/master/core/src/main/kotlin/com/fractalwrench/json2kotlin/JsonReader.kt">generate a JSON tree using GSON</a>.<li>Use <a href="https://github.com/fractalwrench/json-2-kotlin/blob/master/core/src/main/kotlin/com/fractalwrench/json2kotlin/ReverseJsonTreeTraverser.kt">breadth-first search</a> to push each JSON node onto a Stack, along with some additional metadata.<li>Traverse in reverse level order and <a href="https://github.com/fractalwrench/json-2-kotlin/blob/master/core/src/main/kotlin/com/fractalwrench/json2kotlin/TypeSpecGenerator.kt">generate type information</a>, <a href="https://github.com/fractalwrench/json-2-kotlin/blob/master/core/src/main/kotlin/com/fractalwrench/json2kotlin/GroupingStrategy.kt">group common objects</a>, then <a href="https://github.com/fractalwrench/json-2-kotlin/blob/master/core/src/main/kotlin/com/fractalwrench/json2kotlin/TypeReducer.kt">reduce common objects to a single type types</a>.<li>Pop the stack of <a href="https://github.com/fractalwrench/json-2-kotlin/blob/master/core/src/main/kotlin/com/fractalwrench/json2kotlin/SourceFileWriter.kt">generated type information</a> and write it to an <code>OutputStream</code>.</ol><h3 id="json-tree-traversal">JSON Tree traversal</h3><p>We&rsquo;ll start by implementing a <a href="https://en.wikipedia.org/wiki/Breadth-first_search">breadth-first search</a> that pushes non-primitive JSON nodes to a stack.<pre><code>private fun buildStack(bfsStack: Stack&lt;TypedJsonElement&gt;,
+                       parent: JsonElement,
+                       key: String?) {
+    val queue = LinkedList&lt;TypedJsonElement&gt;()
+    queue.add(TypedJsonElement(parent, key!!, 0))
+
+    while (queue.isNotEmpty()) {
+        val element = queue.poll()
+        bfsStack.push(element)
+
+        val complexChildren = with(element) {
+            when {
+                isJsonObject -&gt; convertParent(asJsonObject, level + 1)
+                isJsonArray -&gt; convertParent(asJsonArray, jsonKey, level + 1)
+                else -&gt; Collections.emptyList()
+            }
+        }
+        queue.addAll(complexChildren)
+    }
+}
+</code></pre><p>We&rsquo;ll then pop from the stack and process JSON nodes. For each level, we&rsquo;ll generate a <a href="https://square.github.io/kotlinpoet/0.x/kotlinpoet/com.squareup.kotlinpoet/-type-spec/">TypeSpec</a> for each distinct object grouping.<pre><code>fun generateTypeSpecs(bfsStack: Stack&lt;TypedJsonElement&gt;): Stack&lt;TypeSpec&gt; {
+    val typeSpecs = Stack&lt;TypeSpec&gt;()
+    var level = -1
+    val levelQueue = LinkedList&lt;TypedJsonElement&gt;()
+
+    while (bfsStack.isNotEmpty()) {
+        val pop = bfsStack.pop()
+
+        if (level != -1 &amp;&amp; pop.level != level) {
+            processTreeLevel(levelQueue, typeSpecs)
+        }
+        levelQueue.add(pop)
+        level = pop.level
+    }
+    processTreeLevel(levelQueue, typeSpecs)
+    return typeSpecs
+}
+</code></pre><h3 id="grouping-common-objects">Grouping common objects</h3><p>Our grouping strategy will be very simple. For objects to belong to the same type, they must share <sup>1</sup>&frasl;<sub>5</sub> or more of the same keys. The only exception to this will be an empty class, which will be considered to share 1 key automatically.<pre><code>// builds a list of common objects, implementation omitted
+fun groupCommonJsonObjects
+(jsonElements: MutableList&lt;TypedJsonElement&gt;): List&lt;List&lt;TypedJsonElement&gt;&gt;
+
+internal fun defaultGroupingStrategy(lhs: TypedJsonElement,
+                                     rhs: TypedJsonElement): Boolean {
+    val lhsKeys = lhs.asJsonObject.keySet()
+    val rhsKeys = rhs.asJsonObject.keySet()
+    val lhsSize = lhsKeys.size
+    val rhsSize = rhsKeys.size
+    val emptyClasses = (lhsKeys.isEmpty() || rhsKeys.isEmpty())
+
+    val maxKeySize = if (lhsSize &gt; rhsSize) lhsSize else rhsSize
+    val commonKeyCount = if (emptyClasses) {
+        1
+    } else  {
+        lhsKeys.intersect(rhsKeys).size
+    }
+
+    // at least a fifth of keys must match
+    return (commonKeyCount * 5) &gt;= maxKeySize
+}
+</code></pre><p>We&rsquo;ll also make it easy to alter the grouping strategy at a later date, by accepting a function reference as a constructor parameter:<pre><code>// typealias used to make method signature more human-readable
+typealias GroupingStrategy =
+ (lhs: TypedJsonElement, rhs: TypedJsonElement) -&gt; Boolean
+class JsonFieldGrouper(private val strategy: GroupingStrategy = ::myStrategy)
+</code></pre><h3 id="generating-kotlinpoet-typespecs">Generating KotlinPoet TypeSpecs</h3><p>Now that our objects are grouped, we can generate type representations using KotlinPoet. We&rsquo;ll start by building a <code>TypeSpec</code>:<pre><code>private fun buildClass(commonElements: List&lt;TypedJsonElement&gt;,
+                       fields: Collection&lt;String&gt;): TypeSpec.Builder {
+
+    val identifier = commonElements.last().kotlinIdentifier
+    val classBuilder = TypeSpec.classBuilder(identifier.capitalize())
+    val constructor = FunSpec.constructorBuilder()
+
+    if (fields.isNotEmpty()) {
+        val fieldTypeMap = typeReducer.findDistinctTypes(fields,
+                                                         commonElements,
+                                                         jsonElementMap)
+        fields.forEach {
+            buildProperty(it, fieldTypeMap,
+                          commonElements, classBuilder, constructor)
+        }
+        classBuilder.addModifiers(KModifier.DATA)
+        classBuilder.primaryConstructor(constructor.build())
+    }
+
+    delegate.prepareClass(classBuilder, commonElements.last())
+    return classBuilder
+}
+</code></pre><p>There&rsquo;s quite a lot going on here. First, we create a <code>TypeSpec.Builder</code>, which holds the information used to build a class.<p>We then add the <code>data</code> modifier, build a constructor, and for each JSON field, call the <code>buildProperty</code> method:<pre><code>private fun buildProperty(fieldKey: String,
+                          fieldTypeMap: Map&lt;String, TypeName&gt;,
+                          commonElements: List&lt;TypedJsonElement&gt;,
+                          classBuilder: TypeSpec.Builder,
+                          constructor: FunSpec.Builder) {
+
+    val kotlinIdentifier = fieldKey.toKotlinIdentifier()
+    val typeName = fieldTypeMap[fieldKey]
+
+    val initializer = PropertySpec.builder(kotlinIdentifier, typeName!!)
+                                  .initializer(kotlinIdentifier)
+    delegate.prepareProperty(initializer, kotlinIdentifier,
+                            fieldKey, commonElements)
+
+    classBuilder.addProperty(initializer.build())
+    constructor.addParameter(kotlinIdentifier, typeName)
+  }
+</code></pre><p>We add a property for each JSON field by generating a <code>PropertySpec</code>.<p>For our case, all we need to include is the Kotlin identifier, and the property&rsquo;s Kotlin type, which is represented by <code>TypeName</code>. The typename may be a Standard Library type such as <code>String?</code>, but could also be a type generated earlier on, such as <code>Foo</code>.<p>Each generated <code>TypeSpec</code> will then be pushed to a Stack, where it will eventually be written to an <code>OutputStream</code> as a Kotlin source file.<h2 id="writing-a-kotlin-command-line-application">Writing a Kotlin command-line application</h2><p>Our conversion tool is working pretty nicely by this point, so we&rsquo;ll start writing a command-line app. This module will depend on the <code>core</code> module and the <a href="https://commons.apache.org/cli/usage.html">Apache Commons CLI</a>, which does all the hard work of parsing arguments for us.<pre><code>compile project(&quot;:core&quot;)
+compile &quot;commons-cli:commons-cli:1.4&quot;
+</code></pre><h3 id="handling-command-line-arguments">Handling command line arguments</h3><p>We&rsquo;ll start off by supporting <code>help</code> and <code>input</code> arguments:<pre><code>private fun prepareOptions(): Options {
+    return with(Options()) {
+        addOption(Option.builder(&quot;input&quot;)
+                .desc(&quot;The JSON file input&quot;)
+                .numberOfArgs(1)
+                .build())
+        addOption(Option.builder(&quot;help&quot;)
+                .desc(&quot;Displays help on available commands&quot;)
+                .build())
+    }
+}
+</code></pre><p>Now we need to handle each argument in our main method. If the arguments were invalid or not present, then we&rsquo;ll print a message indicating that was the case, otherwise we&rsquo;ll attempt to convert the JSON to Kotlin:<pre><code>try {
+    val cmd = parser.parse(prepareOptions(), args)
+
+    if (cmd.hasOption(&quot;help&quot;) || !cmd.hasOption(&quot;input&quot;)) {
+        printHelp(options)
+    } else {
+        val parsedOptionValue = cmd.getParsedOptionValue(&quot;input&quot;) as String
+        val inputFile = Paths.get(parsedOptionValue).toFile()
+
+        if (inputFile.exists()) {
+            val outputFile = findOutputFile(inputFile)
+            val input = inputFile.inputStream()
+            val output = outputFile.outputStream()
+            Kotlin2JsonConverter().convert(input, output, ConversionArgs())
+            println(&quot;Generated source available at '$outputFile'&quot;)
+        } else {
+            println(&quot;Failed to find file '$inputFile'&quot;)
+        }
+    }
+} catch (e: ParseException) {
+    println(&quot;Failed to parse arguments: ${e.message}&quot;)
+}
+</code></pre><h3 id="distributing-a-kotlin-command-line-application">Distributing a Kotlin command-line application</h3><p>JVM languages run pretty much anywhere in a JAR, and Gradle has a task that simplifies the distribution process. Our build file needs a few modifications, such as specifying the location of our main class:<pre><code>apply plugin: 'application'
+
+mainClassName = &quot;com.fractalwrench.json2kotlin.AppKt&quot;
+
+jar {
+    manifest {
+        attributes &quot;Main-Class&quot;: &quot;$mainClassName&quot;
+    }
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+distributions {
+    main {
+        baseName = 'json2kotlin'
+    }
+}
+</code></pre><p>We will then run the following commands to distribute and test our application:<pre><code>./gradlew assemble
+unzip cmdline/build/distributions/json2kotlin.zip -d json2kotlin
+./cmdline -input /c/Users/&lt;User&gt;/json2kotlin/bin/test.json
+</code></pre><p>Our final step is to put the archive somewhere that people can download it, which in this case is <a href="https://github.com/fractalwrench/json-2-kotlin/releases/latest">GitHub</a>.<p>Onto Spring Boot.<h2 id="writing-a-spring-boot-app-in-kotlin">Writing a Spring Boot app in Kotlin</h2><p><a href="https://projects.spring.io/spring-boot/">Spring Boot</a> is a Java Framework that can be used to create web applications, and has recently announced first-class Kotlin support. It comes with sensible defaults, so we should be able to write a useful app in very few lines of code.<h3 id="adding-a-controller-for-get-requests">Adding a controller for GET requests</h3><p>We&rsquo;ll start off by creating an empty Spring Boot project by following Pivotal&rsquo;s very <a href="https://spring.io/guides/gs/rest-service/">handy guide</a>. We&rsquo;ll create a class annotated with <code>Controller</code>, and setup a <code>RequestMapping</code> to the root endpoint:<pre><code>@Controller
+class ConversionController {
+    @GetMapping(&quot;/&quot;)
+    fun displayConversionForm(model: Model): String {
+        model.addAttribute(&quot;conversionForm&quot;, ConversionForm())
+        model.addAttribute(&quot;kotlin&quot;, &quot;class Example&quot;)
+        return &quot;conversion&quot;
+    }
+}
+</code></pre><p>There&rsquo;s a lot of magic going on here.<p>Behind the scenes, Spring will detect the <code>@Controller</code> annotation and route HTTP requests to our <code>displayConversionForm</code> method.<p>This method then adds the generated Kotlin source as an attribute of a <code>Model</code>. Finally it returns a view, which corresponds to a HTML template stored under <code>src/main/resources/static/templates</code>. This template may look familiar to anyone who has used the <a href="https://developer.android.com/topic/libraries/data-binding/index.html">Android Data Binding Library</a> before, and the principle is the same:<pre><code>&lt;html&gt;
+  &lt;head&gt;&lt;/head&gt;
+  &lt;body&gt;
+    &lt;textarea th:text=&quot;${kotlin}&quot;&gt;&lt;/textarea&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre><p><a href="https://www.thymeleaf.org/">Thymeleaf</a> binds model attributes to the view by evaluating any <a href="https://docs.spring.io/spring/docs/4.3.12.RELEASE/spring-framework-reference/html/expressions.html">expressions</a> in the <code>th</code> namespace. The generated HTML is then returned as an HTTP response to the user:<pre><code>&lt;html&gt;
+  &lt;head&gt;&lt;/head&gt;
+  &lt;body&gt;
+    &lt;textarea text=&quot;class Example&quot;&gt;&lt;/textarea&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre><h3 id="adding-a-post-request-mapping">Adding a POST request mapping</h3><p>We&rsquo;re getting slightly ahead of ourselves here, as the generated Kotlin can&rsquo;t be displayed until a user submits their JSON input. Therefore we need to display a form to the user, which will POST the JSON to our <code>/</code> endpoint:<pre><code>&lt;form id=&quot;jsonForm&quot;
+      th:action=&quot;@{/}&quot;
+      th:object=&quot;${conversionForm}&quot;
+      method=&quot;post&quot;
+      onsubmit=&quot;return validateForm()&quot;&gt;
+  &lt;textarea maxlength=&quot;10000&quot;
+            placeholder=&quot;Paste JSON here...&quot;
+            th:field=&quot;*{json}&quot;&gt;&lt;/textarea&gt;
+    &lt;input type=&quot;reset&quot; value=&quot;Reset&quot;/&gt;
+    &lt;input type=&quot;submit&quot; value=&quot;Convert&quot;/&gt;
+&lt;/form&gt;
+</code></pre><p>You may have noticed that the HTML form binds the <code>conversionForm</code> attribute in our previous method, as a form object.<p>When a POST request is submitted, the <code>conversionForm</code> method parameter will contain the text entered into our <code>&lt;textarea&gt;</code> element. We can then pass the user&rsquo;s input into the <code>Kotlin2JsonConverter</code>, and our HTML response will contain dynamically generated Kotlin:<pre><code>@PostMapping(&quot;/&quot;)
+fun convertToKotlin(model: Model,
+                    @ModelAttribute conversionForm: ConversionForm): String {
+    val os = ByteArrayOutputStream()
+    Kotlin2JsonConverter().convert(conversionForm.json, os, ConversionArgs())
+    model.addAttribute(&quot;kotlin&quot;, String(os.first.toByteArray()))
+    return displayConversionForm(model)
+}
+</code></pre><p>Of course, this isn&rsquo;t quite production ready - we&rsquo;d certainly want to sanitise user input before attempting to convert it.<p>We&rsquo;ll skip a few steps here such as adding validation, and making the HTML prettier with CSS. If you&rsquo;re interested in how this functionality works, I&rsquo;d encourage you to browse through the <a href="https://github.com/fractalwrench/json-2-kotlin/tree/master/spring/src/main">Spring module</a> of the project.<h2 id="deploying-a-kotlin-spring-boot-app-to-aws-elastic-beanstalk">Deploying a Kotlin Spring Boot app to AWS Elastic Beanstalk</h2><p>Now that we&rsquo;ve completed an MVP web app, we&rsquo;re going to deploy to AWS using the <a href="https://aws.amazon.com/free/">free tier</a>, which meets the needs of most hobby projects. Some level of familiarity with AWS is assumed from here on out, but here&rsquo;s a quick refresher on the services we&rsquo;ll use:<ul><li><a href="https://aws.amazon.com/elasticbeanstalk/">Elastic Beanstalk</a>: Controls all the AWS services required to build a scalable application.<li><a href="https://aws.amazon.com/ec2/">EC2</a>: Provides on-demand containers which run a JVM application in the cloud.<li><a href="https://aws.amazon.com/elasticloadbalancing/">Elastic Load Balancer</a>: Directs traffic between EC2 instances depending on how busy they are, and scales EC2 instances depending on load.<li><a href="https://aws.amazon.com/route53/">Route 53</a>: Allows us to register a domain name and point the DNS at an Elastic Beanstalk application.</ul><h3 id="building-a-deployable-jar">Building a deployable JAR</h3><p>The first step we&rsquo;ll take is to update our JAR metadata, as we did for the command-line application:<pre><code>jar {
+    baseName = 'json2kotlin'
+    version = '0.1.0'
+    manifest {
+        attributes 'Main-Class': 'AppKt'
+    }
+    from { configurations.compile.collect {
+      it.isDirectory() ? it : zipTree(it) }
+    }
+}
+</code></pre><p>We&rsquo;ll also want to add <a href="https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-enabling.html">Spring Actuator</a> as a dependency, as it exposes <a href="https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-endpoints.html">several endpoints</a> that provide useful information for devops.<pre><code>compile(&quot;org.springframework.boot:spring-boot-starter-actuator&quot;)
+</code></pre><p>Finally, we&rsquo;ll need to update our server port in <code>application.properties</code> so that it can communicate with the load balancer:<pre><code>server.port=8888
+</code></pre><h3 id="registering-a-domain">Registering a domain</h3><p>The next step is to register a domain name, in this case <a href="http://json2kotlin.co.uk/">json2kotlin.co.uk</a>, by following the <a href="https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/registrar.html">AWS guide</a>.<p>After the rest of setup is completed, we&rsquo;ll <a href="https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-beanstalk-environment.html#routing-to-beanstalk-environment-create-alias-procedure">configure a hosted zone</a>, which routes requests towards our Elastic Beanstalk environment.<h3 id="setting-up-an-elastic-beanstalk-environment">Setting up an Elastic Beanstalk environment</h3><p>We now need to setup an Elastic Beanstalk environment, which can be achieved by following this <a href="https://aws.amazon.com/blogs/devops/deploying-a-spring-boot-application-on-aws-using-aws-elastic-beanstalk/">very helpful blog</a> from AWS. <code>./gradlew bootRepackage</code> will generate a JAR of our Spring Boot application.<p>Our application will use a load balancer, which will automatically scale up EC2 instances in the face of heavy traffic. Depending on your anticipated traffic, it&rsquo;s possible that you could skip this step.<p>If you do use a load balancer, it is <strong>vital</strong> that a health check is setup, as otherwise the load balancer will assume that all the instances are unhealthy, and all the requests will timeout. Fortunately, Spring Actuator contains a ready-made <code>/health</code> endpoint, so we&rsquo;ll configure our environment to use this.<h2 id="setup-crash-reporting-with-bugsnag">Setup crash reporting with Bugsnag</h2><p>There are probably a few bugs lurking in our application, so our next step is to add an error-detection SDK that reports any uncaught exceptions that occur in the wild. I chose <a href="https://www.bugsnag.com/">Bugsnag</a> for this task, because:<ul><li>It supports both Kotlin and JavaScript, as well as <a href="https://www.bugsnag.com/platforms/">most languages under the sun</a><li>It&rsquo;s free for open-source/small projects<li>My JavaScript is awful and I&rsquo;m anticipating a lot of browser compatibility errors</ul><p><em>(Full disclaimer, I work for Bugsnag, so you can blame me if anything goes wrong)</em><h2 id="the-end-result">The end result</h2><p>The <a href="http://json2kotlin.co.uk/">final web application is available here</a>, or alternatively you can grab the command-line tool from <a href="https://github.com/fractalwrench/json-2-kotlin/releases/latest">Github</a>.<p>You can also browse the <a href="https://github.com/fractalwrench/json-2-kotlin">complete source of this project</a> on GitHub. At less than 1000 lines of code, this would be a nice project to wrap your head around if you&rsquo;re looking to submit pull requests, issues, or just general feedback!<h2 id="thank-you">Thank You</h2><p>I hope you&rsquo;ve enjoyed learning about Kotlin source generation, and will sleep easy at night in the knowledge that you&rsquo;ll never have to write data classes by hand again.<p>If you have any questions, feedback, or would like to suggest a topic for me to write about, please <a href="https://twitter.com/fractalwrench">get in touch via Twitter</a>!</article><ul class="pager blog-pager"><li class="previous"><a href="https://fractalwrench.co.uk/posts/the-machine-that-goes-ping/"data-toggle="tooltip"data-placement="top"title="The machine that goes PING">&larr; Previous Post</a></ul></div><script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script><link rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"><script>hljs.initHighlightingOnLoad();</script><footer><div><div id="mc_embed_signup"><form action="https://fractalwrench.us17.list-manage.com/subscribe/post?u=8ce76551d511abeade2dfcf67&amp;id=f27e23bc4d"method="post"id="mc-embedded-subscribe-form"name="mc-embedded-subscribe-form"class="validate"target="_blank"novalidate><div id="mc_embed_signup_scroll"><label for="mce-EMAIL">Subscribe to our mailing list</label><input type="email"value=""name="EMAIL"class="email"id="mce-EMAIL"placeholder="email address"required><div style="position: absolute; left: -5000px"aria-hidden="true"><input name="b_8ce76551d511abeade2dfcf67_f27e23bc4d"tabindex="-1"value=""></div><div class="clear"><input type="submit"value="Subscribe"name="subscribe"id="mc-embedded-subscribe"class="button"></div></div></form></div><ul class="list-inline"><li><a href="mailto:fractalwrench@gmail.com"class="font-icon icon-envelope-o"title="Email me"></a><li><a href="https://github.com/fractalwrench"class="font-icon icon-github"title="GitHub"></a><li><a href="https://twitter.com/fractalwrench"class="font-icon icon-twitter"title="Twitter"></a><li><a href="https://reddit.com/u/fractalwrench"class="font-icon icon-reddit-alien"title="Reddit"></a><li><a href="https://linkedin.com/in/fractalwrench"class="font-icon icon-linkedin"title="LinkedIn"></a><li><a href="https://stackoverflow.com/users/5144991/fractalwrench"class="font-icon icon-stack-overflow"title="StackOverflow"></a><li><a href="https://fractalwrench.co.uk/index.xml"title="RSS"class="font-icon icon-rss"></a></ul><p class="copyright"><a href="fractalwrench.co.uk">Jamie Lynch</a> &nbsp;&bull;&nbsp; 2018 &nbsp;&bull;&nbsp; <a href="https://fractalwrench.co.uk/">Fractalwrench</a><p class="copyright"><a href="http://gohugo.io">Hugo v0.26</a> powered &nbsp;&bull;&nbsp; Theme by <a href="http://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a> adapted to <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a></div></footer><link rel="stylesheet"href="https://fractalwrench.co.uk/css/fonticons.css"><script src="https://fractalwrench.co.uk/js/main.js"></script>
