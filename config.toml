@@ -9,7 +9,8 @@ googleAnalytics = "UA-106232170-1"
   subtitle = "UK Android developer based in Bath/Bristol"
   logo = "img/avatar.png"
   favicon = "img/favicon.ico"
-  dateFormat = "Jan 06, 2006"
+  # https://www.madboa.com/blog/2016/08/24/hugo-dateformat/
+  dateFormat = "January 02, 2006"
   commit = false
   rss = true
   comments = true
